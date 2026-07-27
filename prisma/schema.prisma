@@ -126,5 +126,34 @@ model CatalogPolicyConfig {
   updatedAt                 DateTime @updatedAt
 }
 
+model SupportTicketProfile {
+  id                String   @id @default(uuid())
+  shop              String
+  ticketId          String
+  customerEmail     String
+  orderId           String
+  queryCategory     String   // WISMO, RETURN_INQUIRY, ADDRESS_CHANGE, PRODUCT_QUESTION, COMPLAINT
+  customerQuery     String
+  aiResponse        String
+  aiSentimentScore  Float    // -1.0 to 1.0
+  resolutionStatus  String   @default("PENDING_REVIEW") // PENDING_REVIEW, RESOLVED_AUTONOMOUSLY, ESCALATED_TO_HUMAN, CLOSED
+  aiConfidenceScore Int      // 0-100
+  aiActionTaken     String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model SupportPolicyConfig {
+  id                                 String   @id @default(uuid())
+  shop                               String   @unique
+  autoResolveConfidenceThreshold     Int      @default(85)
+  escalateNegativeSentimentThreshold Float    @default(-0.5)
+  supportTone                        String   @default("Empathetic & Professional")
+  enableWismoAutomation              Boolean  @default(true)
+  createdAt                          DateTime @default(now())
+  updatedAt                          DateTime @updatedAt
+}
+
+
 
 

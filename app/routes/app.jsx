@@ -20,6 +20,7 @@ export default function App() {
         <s-link href="/app/return-guard">ReturnGuard AI</s-link>
         <s-link href="/app/margin-guard">MarginGuard AI</s-link>
         <s-link href="/app/catalog-alchemy">CatalogAlchemy AI</s-link>
+        <s-link href="/app/support-shield">SupportShield AI</s-link>
         <s-link href="/app/additional">Additional page</s-link>
       </s-app-nav>
       <Outlet />
