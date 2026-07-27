@@ -32,3 +32,34 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model ReturnRequest {
+  id                 String   @id @default(uuid())
+  shop               String
+  orderId            String
+  orderName          String
+  customerEmail      String
+  itemTitle          String
+  itemPrice          Float
+  cogs               Float
+  returnShippingFee  Float
+  returnReason       String
+  photoUrl           String?
+  aiInspectionStatus String   @default("PENDING") // PENDING, VERIFIED_DEFECT, WARDROBING_SUSPECTED, NORMAL_WEAR
+  aiInspectionNotes  String?
+  deflectionOffer    String?
+  resolutionStatus   String   @default("PENDING") // PENDING, DEFLECTED, EXCHANGED, RETURN_APPROVED, REJECTED_FRAUD
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ReturnPolicyConfig {
+  id                           String   @id @default(uuid())
+  shop                         String   @unique
+  autoDeflectThresholdPercent  Float    @default(20.0)
+  defaultKeepItDiscountPercent Float    @default(40.0)
+  autoFlagWardrobing           Boolean  @default(true)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+}
+
