@@ -63,3 +63,37 @@ model ReturnPolicyConfig {
   updatedAt                    DateTime @updatedAt
 }
 
+model ProductMarginProfile {
+  id                          String   @id @default(uuid())
+  shop                        String
+  productId                   String
+  productTitle                String
+  sku                         String
+  price                       Float
+  cogs                        Float
+  averageShippingCost         Float
+  paymentProcessingFeePercent Float    @default(2.9)
+  paymentProcessingFeeFixed   Float    @default(0.30)
+  currentCac                  Float
+  inventoryLevel              Int
+  restockLeadTimeDays         Int
+  netMarginDollar             Float
+  netMarginPercent            Float
+  aiRepricingStatus           String   @default("OPTIMAL") // OPTIMAL, LOW_MARGIN_ALERT, ELASTICITY_TEST_ACTIVE, INVENTORY_PROTECTION_ACTIVE
+  aiRecommendedPrice          Float
+  aiRepricingRationale        String
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
+
+model MarginPolicyConfig {
+  id                       String   @id @default(uuid())
+  shop                     String   @unique
+  minTargetMarginPercent   Float    @default(20.0)
+  autoNudgePriceOnLowStock Boolean  @default(true)
+  lowStockThreshold        Int      @default(15)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+
