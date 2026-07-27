@@ -10,10 +10,10 @@ import {
 } from "../services/supportShield.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  await seedInitialSupportTickets(prisma, shop);
+  await seedInitialSupportTickets(prisma, shop, admin);
 
   const tickets = await prisma.supportTicketProfile.findMany({
     where: { shop },
@@ -45,7 +45,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -53,13 +53,13 @@ export const action = async ({ request }) => {
   if (actionType === "RESOLVE") {
     const id = formData.get("id");
     const resolution = formData.get("resolution"); // APPROVE_SEND, ESCALATE, CLOSE
-    await executeSupportAction(prisma, id, resolution);
+    await executeSupportAction(prisma, id, resolution, admin);
     return { success: true, action: "RESOLVE", resolution };
   }
 
   if (actionType === "RESET_DEMO") {
     await prisma.supportTicketProfile.deleteMany({ where: { shop } });
-    await seedInitialSupportTickets(prisma, shop);
+    await seedInitialSupportTickets(prisma, shop, admin);
     return { success: true, action: "RESET_DEMO" };
   }
 

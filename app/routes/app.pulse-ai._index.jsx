@@ -10,10 +10,10 @@ import {
 } from "../services/pulseAi.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  await seedInitialTrendOpportunities(prisma, shop);
+  await seedInitialTrendOpportunities(prisma, shop, admin);
 
   const opps = await prisma.trendOpportunityProfile.findMany({
     where: { shop },
@@ -47,7 +47,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -55,13 +55,13 @@ export const action = async ({ request }) => {
   if (actionType === "RESOLVE") {
     const id = formData.get("id");
     const resolution = formData.get("resolution"); // LAUNCH, APPROVE, ARCHIVE
-    await executeTrendAction(prisma, id, resolution);
+    await executeTrendAction(prisma, id, resolution, admin);
     return { success: true, action: "RESOLVE", resolution };
   }
 
   if (actionType === "RESET_DEMO") {
     await prisma.trendOpportunityProfile.deleteMany({ where: { shop } });
-    await seedInitialTrendOpportunities(prisma, shop);
+    await seedInitialTrendOpportunities(prisma, shop, admin);
     return { success: true, action: "RESET_DEMO" };
   }
 

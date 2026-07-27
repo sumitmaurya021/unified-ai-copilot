@@ -10,10 +10,10 @@ import {
 } from "../services/adSpendGuardian.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  await seedInitialAdCampaigns(prisma, shop);
+  await seedInitialAdCampaigns(prisma, shop, admin);
 
   const campaigns = await prisma.adCampaignProfile.findMany({
     where: { shop },
@@ -46,7 +46,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -54,13 +54,13 @@ export const action = async ({ request }) => {
   if (actionType === "RESOLVE") {
     const id = formData.get("id");
     const resolution = formData.get("resolution"); // PAUSE, SCALE, MAINTAIN
-    await executeAdAction(prisma, id, resolution);
+    await executeAdAction(prisma, id, resolution, admin);
     return { success: true, action: "RESOLVE", resolution };
   }
 
   if (actionType === "RESET_DEMO") {
     await prisma.adCampaignProfile.deleteMany({ where: { shop } });
-    await seedInitialAdCampaigns(prisma, shop);
+    await seedInitialAdCampaigns(prisma, shop, admin);
     return { success: true, action: "RESET_DEMO" };
   }
 

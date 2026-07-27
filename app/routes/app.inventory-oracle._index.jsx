@@ -10,10 +10,10 @@ import {
 } from "../services/inventoryOracle.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  await seedInitialInventoryForecasts(prisma, shop);
+  await seedInitialInventoryForecasts(prisma, shop, admin);
 
   const items = await prisma.inventoryForecastProfile.findMany({
     where: { shop },
@@ -46,7 +46,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -54,13 +54,13 @@ export const action = async ({ request }) => {
   if (actionType === "RESOLVE") {
     const id = formData.get("id");
     const resolution = formData.get("resolution"); // DISPATCH_PO, DELIVERED, CLEARANCE
-    await executeInventoryAction(prisma, id, resolution);
+    await executeInventoryAction(prisma, id, resolution, admin);
     return { success: true, action: "RESOLVE", resolution };
   }
 
   if (actionType === "RESET_DEMO") {
     await prisma.inventoryForecastProfile.deleteMany({ where: { shop } });
-    await seedInitialInventoryForecasts(prisma, shop);
+    await seedInitialInventoryForecasts(prisma, shop, admin);
     return { success: true, action: "RESET_DEMO" };
   }
 

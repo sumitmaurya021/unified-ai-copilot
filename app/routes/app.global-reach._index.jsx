@@ -10,10 +10,10 @@ import {
 } from "../services/globalReach.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  await seedInitialLocalizationProfiles(prisma, shop);
+  await seedInitialLocalizationProfiles(prisma, shop, admin);
 
   const profiles = await prisma.localizationProfile.findMany({
     where: { shop },
@@ -43,7 +43,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -51,13 +51,13 @@ export const action = async ({ request }) => {
   if (actionType === "RESOLVE") {
     const id = formData.get("id");
     const resolution = formData.get("resolution"); // PUBLISH, APPROVE, ARCHIVE
-    await executeLocalizationAction(prisma, id, resolution);
+    await executeLocalizationAction(prisma, id, resolution, admin);
     return { success: true, action: "RESOLVE", resolution };
   }
 
   if (actionType === "RESET_DEMO") {
     await prisma.localizationProfile.deleteMany({ where: { shop } });
-    await seedInitialLocalizationProfiles(prisma, shop);
+    await seedInitialLocalizationProfiles(prisma, shop, admin);
     return { success: true, action: "RESET_DEMO" };
   }
 

@@ -10,10 +10,10 @@ import {
 } from "../services/marginGuard.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  await seedInitialMarginProfiles(prisma, shop);
+  await seedInitialMarginProfiles(prisma, shop, admin);
 
   const profiles = await prisma.productMarginProfile.findMany({
     where: { shop },
@@ -44,7 +44,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -52,13 +52,13 @@ export const action = async ({ request }) => {
   if (actionType === "REPRICE") {
     const id = formData.get("id");
     const newPrice = formData.get("newPrice");
-    await executeAiRepricing(prisma, id, newPrice);
+    await executeAiRepricing(prisma, id, newPrice, "", admin);
     return { success: true, action: "REPRICE" };
   }
 
   if (actionType === "RESET_DEMO") {
     await prisma.productMarginProfile.deleteMany({ where: { shop } });
-    await seedInitialMarginProfiles(prisma, shop);
+    await seedInitialMarginProfiles(prisma, shop, admin);
     return { success: true, action: "RESET_DEMO" };
   }
 
@@ -226,20 +226,20 @@ export default function MarginGuardDashboard() {
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "16px" }}>
                 <div style={{ fontSize: "13px", color: "#334155", lineHeight: "1.5", minWidth: 0 }}>
-                  <strong>Current Price:</strong> ${p.currentPrice} | <strong>COGS:</strong> ${p.cogs} | <strong>Ad CAC:</strong> ${p.adSpendCac}<br />
+                  <strong>Current Price:</strong> ${p.price} | <strong>COGS:</strong> ${p.cogs} | <strong>Ad CAC:</strong> ${p.currentCac}<br />
                   <strong>Net Contribution / Unit:</strong> <span style={{ fontWeight: "800", color: p.netMarginDollar >= 0 ? "#059669" : "#dc2626" }}>${p.netMarginDollar} ({p.netMarginPercent}%)</span>
                 </div>
 
                 <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px", color: "#475569", minWidth: 0 }}>
                   <strong>AI Recommendation:</strong><br />
-                  Set price to <strong>${p.recommendedPrice}</strong> ({p.aiRationale})
+                  Set price to <strong>${p.aiRecommendedPrice}</strong> ({p.aiRepricingRationale})
                 </div>
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", background: "#f8fafc", padding: "10px", borderRadius: "8px" }}>
-                {p.currentPrice !== p.recommendedPrice && (
-                  <button onClick={() => handleReprice(p.id, p.recommendedPrice)} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "white", fontSize: "12px", fontWeight: "700", cursor: "pointer", boxShadow: "0 2px 8px rgba(79,70,229,0.25)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                    <span>🚀</span> Apply AI Recommended Price (${p.recommendedPrice})
+                {p.price !== p.aiRecommendedPrice && (
+                  <button onClick={() => handleReprice(p.id, p.aiRecommendedPrice)} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "white", fontSize: "12px", fontWeight: "700", cursor: "pointer", boxShadow: "0 2px 8px rgba(79,70,229,0.25)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <span>🚀</span> Apply AI Recommended Price (${p.aiRecommendedPrice})
                   </button>
                 )}
               </div>

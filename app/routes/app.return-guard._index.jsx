@@ -10,10 +10,10 @@ import {
 } from "../services/returnGuard.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  await seedInitialReturnRequests(prisma, shop);
+  await seedInitialReturnRequests(prisma, shop, admin);
 
   const returnRequests = await prisma.returnRequest.findMany({
     where: { shop },
@@ -57,7 +57,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -65,13 +65,13 @@ export const action = async ({ request }) => {
   if (actionType === "RESOLVE") {
     const id = formData.get("id");
     const resolution = formData.get("resolution");
-    await processAIResolution(prisma, id, resolution);
+    await processAIResolution(prisma, id, resolution, "", admin);
     return { success: true, action: "RESOLVE", resolution };
   }
 
   if (actionType === "RESET_DEMO") {
     await prisma.returnRequest.deleteMany({ where: { shop } });
-    await seedInitialReturnRequests(prisma, shop);
+    await seedInitialReturnRequests(prisma, shop, admin);
     return { success: true, action: "RESET_DEMO" };
   }
 

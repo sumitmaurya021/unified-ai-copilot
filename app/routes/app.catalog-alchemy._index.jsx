@@ -10,10 +10,10 @@ import {
 } from "../services/catalogAlchemy.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
-  await seedInitialCatalogItems(prisma, shop);
+  await seedInitialCatalogItems(prisma, shop, admin);
 
   const items = await prisma.catalogItemProfile.findMany({
     where: { shop },
@@ -55,20 +55,20 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
 
   if (actionType === "PUBLISH") {
     const id = formData.get("id");
-    await executeCatalogPublish(prisma, id);
+    await executeCatalogPublish(prisma, id, "PUBLISH", admin);
     return { success: true, action: "PUBLISH" };
   }
 
   if (actionType === "RESET_DEMO") {
     await prisma.catalogItemProfile.deleteMany({ where: { shop } });
-    await seedInitialCatalogItems(prisma, shop);
+    await seedInitialCatalogItems(prisma, shop, admin);
     return { success: true, action: "RESET_DEMO" };
   }
 

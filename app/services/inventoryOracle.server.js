@@ -1,80 +1,91 @@
 /**
  * InventoryOracle AI Copilot Server Engine
- * Handles database seeding and supply chain Purchase Order (PO) dispatch mutations.
+ * Handles database seeding from real Shopify products and PO dispatch mutations.
+ * Powered by Groq Llama 3 with automatic heuristic fallback.
  */
 import { calculateInventoryForecast, evaluateInventoryHealth } from "./inventoryOracle";
+import { predictInventoryActionWithGroq, fetchRealStoreProducts } from "./groqAi.server";
 
 export { calculateInventoryForecast, evaluateInventoryHealth };
 
 /**
- * Seeds initial demo inventory forecasts if the database is empty for the shop.
+ * Seeds initial inventory forecasts from REAL Shopify store products.
  */
-export async function seedInitialInventoryForecasts(prisma, shop) {
+export async function seedInitialInventoryForecasts(prisma, shop, admin = null) {
   const count = await prisma.inventoryForecastProfile.count({ where: { shop } });
   if (count > 0) {
     return false;
   }
 
-  const demoItems = [
-    {
-      shop,
-      productId: "gid://shopify/Product/2005",
-      productTitle: "Heavyweight Organic Cotton Fleece Hoodie",
-      currentStock: 12,
-      dailySalesVelocity: 4.5,
-      supplierLeadTimeDays: 14,
-      statusOverride: "CRITICAL_STOCKOUT_IMMINENT",
-      poOverride: "DRAFT_AI",
-    },
-    {
-      shop,
-      productId: "gid://shopify/Product/2001",
-      productTitle: "AeroMesh Lightweight Performance Running Sneaker",
-      currentStock: 320,
-      dailySalesVelocity: 0.4,
-      supplierLeadTimeDays: 21,
-      statusOverride: "OVERSTOCKED_DEAD_CAPITAL",
-      poOverride: "NONE",
-    },
-    {
-      shop,
-      productId: "gid://shopify/Product/2004",
-      productTitle: "HydraGlow Advanced Vitamin C Radiance Serum",
-      currentStock: 180,
-      dailySalesVelocity: 8.2,
-      supplierLeadTimeDays: 14,
-      statusOverride: "HEALTHY_BUFFER",
-      poOverride: "NONE",
-    },
-    {
-      shop,
-      productId: "gid://shopify/Product/2002",
-      productTitle: "Silk Velvet Evening Gown — Midnight Edition",
-      currentStock: 15,
-      dailySalesVelocity: 1.2,
-      supplierLeadTimeDays: 10,
-      statusOverride: "REORDER_PLACED",
-      poOverride: "APPROVED_DISPATCHED",
-    },
-    {
-      shop,
-      productId: "gid://shopify/Product/2003",
-      productTitle: "Titanium Magnetic Smart Watch Band",
-      currentStock: 45,
-      dailySalesVelocity: 3.5,
-      supplierLeadTimeDays: 14,
-      statusOverride: "CRITICAL_STOCKOUT_IMMINENT",
-      poOverride: "DRAFT_AI",
-    }
-  ];
+  let itemsToSeed = [];
 
-  for (const item of demoItems) {
+  if (admin) {
+    const realProducts = await fetchRealStoreProducts(admin, 15);
+    if (realProducts && realProducts.length > 0) {
+      for (const p of realProducts) {
+        const stockVal = p.totalInventory !== undefined && p.totalInventory !== null ? p.totalInventory : 15;
+        const velVal = Math.round((stockVal < 10 ? 2.5 : 0.8) * 10) / 10;
+
+        itemsToSeed.push({
+          shop,
+          productId: p.id,
+          productTitle: p.title || "Untitled SKU",
+          currentStock: stockVal,
+          dailySalesVelocity: velVal,
+          supplierLeadTimeDays: 14,
+        });
+      }
+    }
+  }
+
+  // Fallback if no real products exist in store
+  if (itemsToSeed.length === 0) {
+    itemsToSeed = [
+      {
+        shop,
+        productId: "gid://shopify/Product/2005",
+        productTitle: "Heavyweight Organic Cotton Fleece Hoodie",
+        currentStock: 12,
+        dailySalesVelocity: 4.5,
+        supplierLeadTimeDays: 14,
+      },
+      {
+        shop,
+        productId: "gid://shopify/Product/2001",
+        productTitle: "AeroMesh Lightweight Performance Running Sneaker",
+        currentStock: 320,
+        dailySalesVelocity: 0.4,
+        supplierLeadTimeDays: 21,
+      },
+      {
+        shop,
+        productId: "gid://shopify/Product/2004",
+        productTitle: "HydraGlow Advanced Vitamin C Radiance Serum",
+        currentStock: 180,
+        dailySalesVelocity: 8.2,
+        supplierLeadTimeDays: 14,
+      }
+    ];
+  }
+
+  for (const item of itemsToSeed) {
+    let aiPred = await predictInventoryActionWithGroq({
+      productTitle: item.productTitle,
+      currentStock: item.currentStock,
+      salesVelocity: item.dailySalesVelocity,
+      leadTime: item.supplierLeadTimeDays,
+    });
+
     const evalResult = evaluateInventoryHealth({
       productTitle: item.productTitle,
       currentStock: item.currentStock,
       dailySalesVelocity: item.dailySalesVelocity,
       supplierLeadTimeDays: item.supplierLeadTimeDays,
     });
+
+    const statusVal = aiPred ? aiPred.stockStatus : evalResult.stockStatus;
+    const poUnitsVal = aiPred ? aiPred.recommendedPoUnits : evalResult.recommendedPoUnits;
+    const recVal = aiPred ? aiPred.aiActionRecommendation : evalResult.aiActionRecommendation;
 
     await prisma.inventoryForecastProfile.create({
       data: {
@@ -86,10 +97,10 @@ export async function seedInitialInventoryForecasts(prisma, shop) {
         supplierLeadTimeDays: item.supplierLeadTimeDays,
         predictedStockoutDays: evalResult.predictedStockoutDays,
         reorderPointUnits: evalResult.reorderPointUnits,
-        recommendedPoUnits: evalResult.recommendedPoUnits,
-        stockStatus: item.statusOverride || evalResult.stockStatus,
-        aiActionRecommendation: evalResult.aiActionRecommendation,
-        poStatus: item.poOverride || evalResult.poStatus,
+        recommendedPoUnits: poUnitsVal,
+        stockStatus: statusVal,
+        aiActionRecommendation: recVal,
+        poStatus: statusVal.includes("CRITICAL") ? "DRAFT_AI" : "NONE",
       },
     });
   }
@@ -112,7 +123,7 @@ export async function seedInitialInventoryForecasts(prisma, shop) {
 /**
  * Autonomously executes PO dispatch, delivery restock, or dead stock clearance actions.
  */
-export async function executeInventoryAction(prisma, forecastId, actionType = "DISPATCH_PO") {
+export async function executeInventoryAction(prisma, forecastId, actionType = "DISPATCH_PO", admin = null) {
   const item = await prisma.inventoryForecastProfile.findUnique({ where: { id: forecastId } });
   if (!item) return null;
 
@@ -129,7 +140,7 @@ export async function executeInventoryAction(prisma, forecastId, actionType = "D
     newStatus = "HEALTHY_BUFFER";
     newRec = "MAINTAIN_CURRENT_STOCK";
     newPo = "DELIVERED";
-    newStock = item.currentStock + item.recommendedPoUnits; // Add PO shipment to stock
+    newStock = item.currentStock + item.recommendedPoUnits;
   } else if (actionType === "CLEARANCE") {
     newStatus = "OVERSTOCKED_DEAD_CAPITAL";
     newRec = "INITIATE_CLEARANCE_BUNDLE";
