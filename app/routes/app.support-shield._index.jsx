@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLoaderData, useFetcher } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
-import { analyzeCustomerSentiment, generateSupportResponse } from "../services/supportShield";
 import {
   seedInitialSupportTickets,
   executeSupportAction,
 } from "../services/supportShield.server";
+import {
+  analyzeCustomerSentiment,
+  generateSupportResponse,
+} from "../services/supportShield";
 
 export const loader = async ({ request }) => {
   const { session, admin } = await authenticate.admin(request);
@@ -66,29 +68,19 @@ export const action = async ({ request }) => {
   return { success: false };
 };
 
-export default function SupportShieldDashboard() {
+export default function SupportShieldRoute() {
   const { tickets, stats } = useLoaderData();
   const fetcher = useFetcher();
-  const shopify = useAppBridge();
 
   const [simMessage, setSimMessage] = useState("Where is my order #1084? It has been 3 days and I haven't received tracking.");
 
   const simSentiment = analyzeCustomerSentiment(simMessage);
-  const simResponse = generateSupportResponse({ customerMessage: simMessage, customerName: "Sarah Jenkins" });
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      if (fetcher.data.action === "RESOLVE") {
-        let msg = "Ticket action processed!";
-        if (fetcher.data.resolution === "APPROVE_SEND") msg = "🚀 AI response sent & ticket resolved autonomously!";
-        if (fetcher.data.resolution === "ESCALATE") msg = "🚨 Escalated to VIP Priority Human Agent!";
-        if (fetcher.data.resolution === "CLOSE") msg = "✅ Ticket marked closed!";
-        shopify.toast.show(msg);
-      } else if (fetcher.data.action === "RESET_DEMO") {
-        shopify.toast.show("Demo support tickets reset successfully!");
-      }
-    }
-  }, [fetcher.data, shopify]);
+  const simResponse = generateSupportResponse({
+    customerEmail: "sim@example.com",
+    orderId: "#1084",
+    queryText: simMessage,
+    orderStatus: "Out for Delivery Today",
+  });
 
   const handleResolve = (id, resolution) => {
     fetcher.submit({ actionType: "RESOLVE", id, resolution }, { method: "POST" });
@@ -104,15 +96,15 @@ export default function SupportShieldDashboard() {
       {/* Module Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
-          <h1 style={{ fontSize: "26px", fontWeight: "800", color: "#0f172a", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>
+          <h1 style={{ fontSize: "26px", fontWeight: "800", color: "var(--text-main)", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>
             🛡️ SupportShield AI — Autonomous L1 Support Agent
           </h1>
-          <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>
+          <p style={{ fontSize: "14px", color: "var(--text-subtle)", margin: 0 }}>
             Sentiment analysis, instant WISMO tracking, ReturnGuard self-service integration & VIP escalation.
           </p>
         </div>
 
-        <button onClick={handleResetDemo} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "white", fontSize: "13px", fontWeight: "600", cursor: "pointer", color: "#334155" }}>
+        <button onClick={handleResetDemo} className="saas-btn btn-secondary">
           🔄 Reset Support Tickets
         </button>
       </div>
@@ -139,48 +131,48 @@ export default function SupportShieldDashboard() {
       </div>
 
       {/* Simulator */}
-      <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "24px", marginBottom: "32px", boxShadow: "0 2px 6px rgba(0,0,0,0.04)" }}>
-        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", margin: "0 0 8px 0" }}>
+      <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "24px", marginBottom: "32px", boxShadow: "var(--shadow-md)" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "var(--text-main)", margin: "0 0 8px 0" }}>
           🔬 Live Customer Support Simulator
         </h2>
-        <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px 0" }}>
+        <p style={{ fontSize: "13px", color: "var(--text-subtle)", margin: "0 0 16px 0" }}>
           Type a customer inquiry below to test AI sentiment scoring, intent detection, and automated response generation:
         </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", background: "#f8fafc", padding: "20px", borderRadius: "10px", border: "1px solid #cbd5e1" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", background: "var(--bg-subtle)", padding: "20px", borderRadius: "10px", border: "1px solid var(--border-strong)" }}>
           <div>
             <div style={{ marginBottom: "12px" }}>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Customer Message Input</label>
-              <textarea rows={4} value={simMessage} onChange={(e) => setSimMessage(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "13px" }} />
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>Customer Message Input</label>
+              <textarea rows={4} value={simMessage} onChange={(e) => setSimMessage(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-strong)", fontSize: "13px" }} />
             </div>
 
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-              <button onClick={() => setSimMessage("Where is my order #1084? It has been 3 days.")} style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>📦 WISMO Check</button>
-              <button onClick={() => setSimMessage("I want to return my dress it doesn't fit properly.")} style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>🔄 Return Link</button>
-              <button onClick={() => setSimMessage("THIS IS A SCAM! I will report your store to my lawyer!")} style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "4px", border: "1px solid #fca5a5", background: "#fef2f2", color: "#dc2626", cursor: "pointer" }}>🚨 Furious Complaint</button>
+              <button onClick={() => setSimMessage("Where is my order #1084? It has been 3 days.")} className="saas-btn btn-secondary" style={{ padding: "4px 8px", fontSize: "11px" }}>📦 WISMO Check</button>
+              <button onClick={() => setSimMessage("I want to return my dress it doesn't fit properly.")} className="saas-btn btn-secondary" style={{ padding: "4px 8px", fontSize: "11px" }}>🔄 Return Link</button>
+              <button onClick={() => setSimMessage("THIS IS A SCAM! I will report your store to my lawyer!")} className="saas-btn btn-danger" style={{ padding: "4px 8px", fontSize: "11px" }}>🚨 Furious Complaint</button>
             </div>
           </div>
 
-          <div style={{ background: "white", padding: "16px", borderRadius: "8px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <div style={{ background: "var(--bg-surface)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-light)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", marginBottom: "12px" }}>
-                <span style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a" }}>🧠 AI Customer Telemetry</span>
-                <span style={{ backgroundColor: simSentiment.score < -0.3 ? "#fef2f2" : "#ecfdf5", color: simSentiment.score < -0.3 ? "#dc2626" : "#059669", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "800" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-light)", paddingBottom: "8px", marginBottom: "12px" }}>
+                <span style={{ fontSize: "14px", fontWeight: "800", color: "var(--text-main)" }}>🧠 AI Customer Telemetry</span>
+                <span className={`saas-badge ${simSentiment.score < -0.3 ? "badge-danger" : "badge-success"}`}>
                   Sentiment: {simSentiment.label} ({simSentiment.score})
                 </span>
               </div>
 
-              <div style={{ fontSize: "12px", color: "#475569", lineHeight: "1.5" }}>
+              <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.5" }}>
                 • <strong>Detected Intent:</strong> {simResponse.intent}<br />
                 • <strong>AI Confidence:</strong> {(simResponse.confidence * 100).toFixed(0)}%<br />
                 • <strong>Generated Response Preview:</strong>
-                <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "6px", border: "1px solid #e2e8f0", marginTop: "4px", fontSize: "11px", color: "#1e293b" }}>
+                <div style={{ background: "var(--bg-subtle)", padding: "8px", borderRadius: "6px", border: "1px solid var(--border-light)", marginTop: "4px", fontSize: "11px", color: "var(--text-main)" }}>
                   "{simResponse.suggestedReply}"
                 </div>
               </div>
             </div>
 
-            <div style={{ marginTop: "12px", padding: "8px", borderRadius: "6px", backgroundColor: simResponse.actionNeeded === "ESCALATE_TO_HUMAN" ? "#fef2f2" : "#f0f9ff", border: "1px solid", borderColor: simResponse.actionNeeded === "ESCALATE_TO_HUMAN" ? "#fca5a5" : "#bae6fd", fontSize: "11px", fontWeight: "800", color: simResponse.actionNeeded === "ESCALATE_TO_HUMAN" ? "#dc2626" : "#0369a1" }}>
+            <div style={{ marginTop: "12px", padding: "8px", borderRadius: "6px", backgroundColor: simResponse.actionNeeded === "ESCALATE_TO_HUMAN" ? "var(--danger-bg)" : "var(--info-bg)", border: "1px solid", borderColor: simResponse.actionNeeded === "ESCALATE_TO_HUMAN" ? "var(--danger-border)" : "var(--info-border)", fontSize: "11px", fontWeight: "800", color: simResponse.actionNeeded === "ESCALATE_TO_HUMAN" ? "var(--danger-main)" : "var(--info-main)" }}>
               Action: {simResponse.actionNeeded === "ESCALATE_TO_HUMAN" ? "🚨 Priority Escalation Required" : "🚀 Auto-Send Reply"}
             </div>
           </div>
@@ -188,58 +180,60 @@ export default function SupportShieldDashboard() {
       </div>
 
       {/* Ticket Queue */}
-      <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", marginBottom: "16px" }}>
+      <h2 style={{ fontSize: "18px", fontWeight: "800", color: "var(--text-main)", marginBottom: "16px" }}>
         ⚡ Live Customer Support Tickets Queue
       </h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {tickets.map((t) => {
-          let statusBg = "#f1f5f9";
-          let statusColor = "#475569";
-          if (t.resolutionStatus === "RESOLVED_AUTONOMOUSLY") { statusBg = "#ecfdf5"; statusColor = "#059669"; }
-          if (t.resolutionStatus === "ESCALATED_TO_HUMAN") { statusBg = "#fef2f2"; statusColor = "#dc2626"; }
-          if (t.resolutionStatus === "PENDING_REVIEW") { statusBg = "#fffbeb"; statusColor = "#b45309"; }
+          let isResolved = t.resolutionStatus === "RESOLVED_AUTONOMOUSLY";
+          let isEscalated = t.resolutionStatus === "ESCALATED_TO_HUMAN";
 
           return (
-            <div key={t.id} style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 6px rgba(0,0,0,0.03)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px" }}>
+            <div key={t.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px" }}>
                 <div>
-                  <span style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a" }}>👤 {t.customerName}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "#64748b" }}>Order #{t.orderId} • Intent: {t.inquiryIntent}</span>
+                  <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>👤 {t.customerEmail}</span>
+                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Order #{t.orderId} • Intent: {t.queryCategory}</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ padding: "4px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "800", backgroundColor: t.sentimentScore < -0.3 ? "#fef2f2" : "#ecfdf5", color: t.sentimentScore < -0.3 ? "#dc2626" : "#059669" }}>
-                    Sentiment: {t.sentimentLabel}
+                  <span className={`saas-badge ${t.aiSentimentScore < 0 ? "badge-danger" : "badge-success"}`}>
+                    Sentiment: {t.aiSentimentScore}
                   </span>
-                  <span style={{ padding: "4px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "800", backgroundColor: statusBg, color: statusColor }}>
+                  <span className={`saas-badge ${isResolved ? "badge-success" : isEscalated ? "badge-danger" : "badge-warning"}`}>
                     {t.resolutionStatus}
                   </span>
                 </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "16px" }}>
-                <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "800", color: "#64748b", marginBottom: "4px" }}>CUSTOMER MESSAGE:</div>
-                  <div style={{ fontSize: "13px", color: "#1e293b" }}>"{t.customerMessage}"</div>
+                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CUSTOMER INQUIRY</div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>"{t.customerQuery}"</div>
                 </div>
 
-                <div style={{ background: "#f0f9ff", padding: "12px", borderRadius: "8px", border: "1px solid #bae6fd" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "800", color: "#0369a1", marginBottom: "4px" }}>AI SUGGESTED REPLY:</div>
-                  <div style={{ fontSize: "12px", color: "#0f172a" }}>"{t.aiSuggestedReply}"</div>
+                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AI SUGGESTED RESPONSE</div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>"{t.aiResponse}"</div>
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", background: "#f8fafc", padding: "10px", borderRadius: "8px" }}>
-                {t.resolutionStatus !== "RESOLVED_AUTONOMOUSLY" && (
-                  <button onClick={() => handleResolve(t.id, "APPROVE_SEND")} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)", color: "white", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>
-                    🚀 Approve & Send AI Reply
-                  </button>
-                )}
-                {t.resolutionStatus !== "ESCALATED_TO_HUMAN" && (
-                  <button onClick={() => handleResolve(t.id, "ESCALATE")} style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #fca5a5", background: "#fef2f2", color: "#b91c1c", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>
-                    🚨 Escalate to VIP Human Agent
-                  </button>
-                )}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <button
+                  onClick={() => handleResolve(t.id, "ESCALATE")}
+                  disabled={fetcher.state !== "idle" || isEscalated}
+                  className="saas-btn btn-danger"
+                >
+                  🚨 Escalate to Human
+                </button>
+
+                <button
+                  onClick={() => handleResolve(t.id, "APPROVE_SEND")}
+                  disabled={fetcher.state !== "idle" || isResolved}
+                  className="saas-btn btn-primary"
+                >
+                  {isResolved ? "✓ Auto-Resolved & Sent" : "🚀 Approve & Send Response"}
+                </button>
               </div>
             </div>
           );

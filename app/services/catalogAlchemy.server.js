@@ -6,7 +6,7 @@
 import { calculateCatalogQualityScore, healCatalogItem } from "./catalogAlchemy";
 import { healCatalogItemWithGroq, fetchRealStoreProducts } from "./groqAi.server";
 
-export { calculateCatalogQualityScore, healCatalogItem };
+export { calculateCatalogQualityScore, healCatalogItem, healCatalogItemWithGroq, executeCatalogPublish as publishHealedItemToShopify };
 
 /**
  * Seeds initial catalog items by importing REAL Shopify store products.

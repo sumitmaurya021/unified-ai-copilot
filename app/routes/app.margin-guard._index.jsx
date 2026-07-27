@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLoaderData, useFetcher } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
-import { calculateSkuMargin, analyzePriceElasticity } from "../services/marginGuard";
 import {
   seedInitialMarginProfiles,
-  executeAiRepricing,
+  executeRepriceAction,
 } from "../services/marginGuard.server";
+import {
+  calculateMarginBreakdown,
+  calculateElasticitySuggestion,
+} from "../services/marginGuard";
 
 export const loader = async ({ request }) => {
   const { session, admin } = await authenticate.admin(request);
@@ -26,11 +28,15 @@ export const loader = async ({ request }) => {
 
   for (const p of profiles) {
     totalMarginPct += p.netMarginPercent;
-    if (p.netMarginDollar < 0) unprofitableCount++;
-    if (p.aiRepricingStatus !== "OPTIMAL") activeOptimizations++;
+    if (p.netMarginPercent < 0 || p.aiRepricingStatus === "UNPROFITABLE_BLEED") {
+      unprofitableCount++;
+    }
+    if (p.aiRepricingStatus !== "OPTIMAL") {
+      activeOptimizations++;
+    }
   }
 
-  const avgMarginPct = profiles.length > 0 ? (totalMarginPct / profiles.length).toFixed(1) : "0.0";
+  const avgMarginPct = profiles.length > 0 ? Math.round(totalMarginPct / profiles.length) : 0;
 
   return {
     profiles,
@@ -38,7 +44,7 @@ export const loader = async ({ request }) => {
       avgMarginPct,
       unprofitableCount,
       activeOptimizations,
-      totalSkus: profiles.length,
+      totalProfiles: profiles.length,
     },
   };
 };
@@ -51,8 +57,8 @@ export const action = async ({ request }) => {
 
   if (actionType === "REPRICE") {
     const id = formData.get("id");
-    const newPrice = formData.get("newPrice");
-    await executeAiRepricing(prisma, id, newPrice, "", admin);
+    const newPrice = parseFloat(formData.get("newPrice"));
+    await executeRepriceAction(prisma, id, newPrice, admin);
     return { success: true, action: "REPRICE" };
   }
 
@@ -65,38 +71,26 @@ export const action = async ({ request }) => {
   return { success: false };
 };
 
-export default function MarginGuardDashboard() {
+export default function MarginGuardRoute() {
   const { profiles, stats } = useLoaderData();
   const fetcher = useFetcher();
-  const shopify = useAppBridge();
 
-  const [simPrice, setSimPrice] = useState("120");
-  const [simCogs, setSimCogs] = useState("45");
-  const [simCac, setSimCac] = useState("35");
-  const [simStock, setSimStock] = useState("12");
+  const [simPrice, setSimPrice] = useState(150.0);
+  const [simCogs, setSimCogs] = useState(55.0);
+  const [simCac, setSimCac] = useState(48.0);
+  const [simStock, setSimStock] = useState(12);
 
-  const simMargin = calculateSkuMargin({
-    currentPrice: parseFloat(simPrice) || 0,
-    cogs: parseFloat(simCogs) || 0,
-    adSpendCac: parseFloat(simCac) || 0,
+  const simMargin = calculateMarginBreakdown({
+    price: Number(simPrice),
+    cogs: Number(simCogs),
+    currentCac: Number(simCac),
   });
 
-  const simElasticity = analyzePriceElasticity({
-    currentPrice: parseFloat(simPrice) || 0,
-    cogs: parseFloat(simCogs) || 0,
-    adSpendCac: parseFloat(simCac) || 0,
-    currentStock: parseInt(simStock) || 0,
+  const simElasticity = calculateElasticitySuggestion({
+    price: Number(simPrice),
+    inventoryLevel: Number(simStock),
+    netMarginPercent: simMargin.netMarginPercent,
   });
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      if (fetcher.data.action === "REPRICE") {
-        shopify.toast.show("🚀 AI Price Optimization published to Shopify catalog!");
-      } else if (fetcher.data.action === "RESET_DEMO") {
-        shopify.toast.show("Demo margin profiles reset successfully!");
-      }
-    }
-  }, [fetcher.data, shopify]);
 
   const handleReprice = (id, newPrice) => {
     fetcher.submit({ actionType: "REPRICE", id, newPrice }, { method: "POST" });
@@ -112,15 +106,15 @@ export default function MarginGuardDashboard() {
       {/* Module Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", gap: "12px", flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ fontSize: "26px", fontWeight: "800", color: "#0f172a", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>
+          <h1 style={{ fontSize: "26px", fontWeight: "800", color: "var(--text-main)", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>
             📈 MarginGuard AI — Dynamic Profit & Elasticity Repricer
           </h1>
-          <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>
+          <p style={{ fontSize: "14px", color: "var(--text-subtle)", margin: 0 }}>
             Real-time net contribution margins factoring in Meta/Google CAC and payment gateway fees.
           </p>
         </div>
 
-        <button onClick={handleResetDemo} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "white", fontSize: "13px", fontWeight: "600", cursor: "pointer", color: "#334155", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+        <button onClick={handleResetDemo} className="saas-btn btn-secondary">
           <span>🔄</span> Reset Margin Profiles
         </button>
       </div>
@@ -147,52 +141,52 @@ export default function MarginGuardDashboard() {
       </div>
 
       {/* Simulator */}
-      <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "24px", marginBottom: "32px", boxShadow: "0 2px 6px rgba(0,0,0,0.04)" }}>
-        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", margin: "0 0 8px 0" }}>
+      <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "24px", marginBottom: "32px", boxShadow: "var(--shadow-md)" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "var(--text-main)", margin: "0 0 8px 0" }}>
           🔬 Live Net Profit & Elasticity Sandbox
         </h2>
-        <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px 0" }}>
+        <p style={{ fontSize: "13px", color: "var(--text-subtle)", margin: "0 0 16px 0" }}>
           Test SKU economics in real-time to watch AI calculate exact net margin dollar contribution and recommend scarcity price bumps:
         </p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", background: "#f8fafc", padding: "20px", borderRadius: "10px", border: "1px solid #cbd5e1" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", background: "var(--bg-subtle)", padding: "20px", borderRadius: "10px", border: "1px solid var(--border-strong)" }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Current Price ($)</label>
-                <input type="number" value={simPrice} onChange={(e) => setSimPrice(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px", fontWeight: "700" }} />
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>Current Price ($)</label>
+                <input type="number" value={simPrice} onChange={(e) => setSimPrice(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border-strong)", fontSize: "14px", fontWeight: "700" }} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Unit COGS ($)</label>
-                <input type="number" value={simCogs} onChange={(e) => setSimCogs(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }} />
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>Unit COGS ($)</label>
+                <input type="number" value={simCogs} onChange={(e) => setSimCogs(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border-strong)", fontSize: "14px" }} />
               </div>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Ad CAC ($)</label>
-                <input type="number" value={simCac} onChange={(e) => setSimCac(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }} />
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>Ad CAC ($)</label>
+                <input type="number" value={simCac} onChange={(e) => setSimCac(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border-strong)", fontSize: "14px" }} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Current Stock</label>
-                <input type="number" value={simStock} onChange={(e) => setSimStock(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }} />
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>Current Stock</label>
+                <input type="number" value={simStock} onChange={(e) => setSimStock(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid var(--border-strong)", fontSize: "14px" }} />
               </div>
             </div>
           </div>
 
-          <div style={{ background: "white", padding: "16px", borderRadius: "8px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
+          <div style={{ background: "var(--bg-surface)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-light)", display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
             <div>
-              <div style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", marginBottom: "12px" }}>
+              <div style={{ fontSize: "14px", fontWeight: "800", color: "var(--text-main)", borderBottom: "1px solid var(--border-light)", paddingBottom: "8px", marginBottom: "12px" }}>
                 🧠 AI Profit Telemetry
               </div>
-              <div style={{ fontSize: "12px", color: "#475569", lineHeight: "1.6" }}>
+              <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.6" }}>
                 • <strong>Gross Revenue:</strong> ${simPrice}<br />
                 • <strong>Deductions:</strong> COGS (${simCogs}) + CAC (${simCac}) + Gateway Fee (${simMargin.gatewayFee})<br />
-                • <strong>Net Profit / Unit:</strong> <span style={{ color: simMargin.netMarginDollar >= 0 ? "#059669" : "#dc2626", fontWeight: "800" }}>${simMargin.netMarginDollar} ({simMargin.netMarginPercent}%)</span>
+                • <strong>Net Profit / Unit:</strong> <span style={{ color: simMargin.netMarginDollar >= 0 ? "var(--success-main)" : "var(--danger-main)", fontWeight: "800" }}>${simMargin.netMarginDollar} ({simMargin.netMarginPercent}%)</span>
               </div>
             </div>
 
-            <div style={{ marginTop: "12px", padding: "10px", borderRadius: "6px", backgroundColor: "#e0e7ff", border: "1px solid #c7d2fe", fontSize: "12px", fontWeight: "800", color: "#3730a3" }}>
+            <div style={{ marginTop: "12px", padding: "10px", borderRadius: "6px", backgroundColor: "rgba(99, 102, 241, 0.15)", border: "1px solid var(--brand-primary)", fontSize: "12px", fontWeight: "800", color: "var(--brand-primary)" }}>
               AI Price Suggestion: ${simElasticity.recommendedPrice} ({simElasticity.rationale})
             </div>
           </div>
@@ -200,48 +194,60 @@ export default function MarginGuardDashboard() {
       </div>
 
       {/* SKU Portfolio Queue */}
-      <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", marginBottom: "16px" }}>
+      <h2 style={{ fontSize: "18px", fontWeight: "800", color: "var(--text-main)", marginBottom: "16px" }}>
         ⚡ SKU Portfolio Profitability & Repricing Queue
       </h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {profiles.map((p) => {
-          let statusBg = "#f1f5f9";
-          let statusColor = "#475569";
-          if (p.aiRepricingStatus === "OPTIMAL") { statusBg = "#ecfdf5"; statusColor = "#059669"; }
-          if (p.aiRepricingStatus === "UNPROFITABLE_BLEED") { statusBg = "#fef2f2"; statusColor = "#dc2626"; }
-          if (p.aiRepricingStatus === "SCARCITY_PRICE_BUMP") { statusBg = "#e0e7ff"; statusColor = "#4f46e5"; }
+          let isUnprofitable = p.netMarginPercent < 0;
 
           return (
-            <div key={p.id} style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 6px rgba(0,0,0,0.03)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+            <div key={p.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
                 <div>
-                  <span style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a" }}>📦 {p.productTitle}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "#64748b" }}>SKU ID: {p.productId.split("/").pop()}</span>
+                  <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>📦 {p.productTitle}</span>
+                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>SKU ID: {p.productId.split("/").pop()}</span>
                 </div>
-                <span style={{ padding: "4px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "800", backgroundColor: statusBg, color: statusColor }}>
-                  {p.aiRepricingStatus}
-                </span>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "16px" }}>
-                <div style={{ fontSize: "13px", color: "#334155", lineHeight: "1.5", minWidth: 0 }}>
-                  <strong>Current Price:</strong> ${p.price} | <strong>COGS:</strong> ${p.cogs} | <strong>Ad CAC:</strong> ${p.currentCac}<br />
-                  <strong>Net Contribution / Unit:</strong> <span style={{ fontWeight: "800", color: p.netMarginDollar >= 0 ? "#059669" : "#dc2626" }}>${p.netMarginDollar} ({p.netMarginPercent}%)</span>
-                </div>
-
-                <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px", color: "#475569", minWidth: 0 }}>
-                  <strong>AI Recommendation:</strong><br />
-                  Set price to <strong>${p.aiRecommendedPrice}</strong> ({p.aiRepricingRationale})
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span className={`saas-badge ${isUnprofitable ? "badge-danger" : "badge-success"}`}>
+                    Net Margin: {p.netMarginPercent}% (${p.netMarginDollar})
+                  </span>
+                  <span className="saas-badge badge-brand">
+                    Status: {p.aiRepricingStatus}
+                  </span>
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", background: "#f8fafc", padding: "10px", borderRadius: "8px" }}>
-                {p.price !== p.aiRecommendedPrice && (
-                  <button onClick={() => handleReprice(p.id, p.aiRecommendedPrice)} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "white", fontSize: "12px", fontWeight: "700", cursor: "pointer", boxShadow: "0 2px 8px rgba(79,70,229,0.25)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                    <span>🚀</span> Apply AI Recommended Price (${p.aiRecommendedPrice})
-                  </button>
-                )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CURRENT UNIT ECONOMICS</div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.6" }}>
+                    • Retail Price: <strong>${p.price}</strong><br />
+                    • Unit COGS: ${p.cogs} | Ad CAC: ${p.currentCac}<br />
+                    • Net Contribution: <strong style={{ color: isUnprofitable ? "var(--danger-main)" : "var(--success-main)" }}>${p.netMarginDollar} ({p.netMarginPercent}%)</strong>
+                  </div>
+                </div>
+
+                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AI REPRICING SUGGESTION</div>
+                  <div style={{ fontSize: "14px", fontWeight: "800", color: "var(--brand-primary)", marginBottom: "4px" }}>
+                    New Price: ${p.aiRecommendedPrice}
+                  </div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                    {p.aiRepricingRationale}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <button
+                  onClick={() => handleReprice(p.id, p.aiRecommendedPrice)}
+                  disabled={fetcher.state !== "idle"}
+                  className="saas-btn btn-primary"
+                >
+                  🚀 Apply AI Price (${p.aiRecommendedPrice})
+                </button>
               </div>
             </div>
           );

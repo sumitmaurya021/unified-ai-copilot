@@ -41,6 +41,41 @@ export function calculateSkuMargin({
   };
 }
 
+export function calculateMarginBreakdown({ price, cogs, currentCac }) {
+  const p = parseFloat(price) || 0;
+  const cost = parseFloat(cogs) || 0;
+  const cac = parseFloat(currentCac) || 0;
+  const gatewayFee = Math.round((p * 0.029 + 0.30) * 100) / 100;
+  const netMarginDollar = Math.round((p - cost - cac - gatewayFee) * 100) / 100;
+  const netMarginPercent = p > 0 ? Math.round((netMarginDollar / p) * 100) : 0;
+
+  return {
+    gatewayFee,
+    netMarginDollar,
+    netMarginPercent,
+  };
+}
+
+export function calculateElasticitySuggestion({ price, inventoryLevel, netMarginPercent }) {
+  const p = parseFloat(price) || 0;
+  if (netMarginPercent < 0) {
+    return {
+      recommendedPrice: (p * 1.15).toFixed(2),
+      rationale: "Unprofitable SKU: 15% price increase recommended to recover COGS + CAC costs.",
+    };
+  }
+  if (inventoryLevel <= 15) {
+    return {
+      recommendedPrice: (p * 1.08).toFixed(2),
+      rationale: "Low Stock Scarcity: 8% price increase recommended to slow velocity and boost margin.",
+    };
+  }
+  return {
+    recommendedPrice: p.toFixed(2),
+    rationale: "Optimal Pricing: Unit economics are healthy at current sales velocity.",
+  };
+}
+
 /**
  * AI pricing engine that evaluates SKU health, inventory scarcity, and ad spend CAC
  * to generate dynamic repricing recommendations.
@@ -69,11 +104,8 @@ export function analyzePriceElasticity({
   const netPct = parseFloat(margin.netMarginPercent);
   const netDlr = parseFloat(margin.netMarginDollar);
 
-  // Target price formula to hit minTargetMarginPercent
-  // p - cost - ship - cac - (p * 0.029 + 0.30) = p * (target / 100)
-  // p * (1 - 0.029 - target/100) = cost + ship + cac + 0.30
   const targetPrice = (cost + ship + cac + 0.30) / Math.max(0.1, 1 - 0.029 - (minTargetMarginPercent / 100));
-  const roundedTarget = Math.ceil(targetPrice * 2) / 2 - 0.01; // format like $X.99 or $X.49
+  const roundedTarget = Math.ceil(targetPrice * 2) / 2 - 0.01;
 
   let status = "OPTIMAL";
   let recommendedPrice = p;
