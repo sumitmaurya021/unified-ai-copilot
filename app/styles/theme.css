@@ -1,19 +1,24 @@
-/* Unified AI Copilot - Master SaaS Theme System */
+/* Unified AI Copilot - Master SaaS Theme System & High Contrast Accessibility */
 
-:root {
-  /* Color Palette */
+/* Light Mode Variables (Default) */
+:root, [data-theme="light"] {
   --bg-app: #f8fafc;
   --bg-surface: #ffffff;
   --bg-subtle: #f1f5f9;
+  --bg-input: #ffffff;
   
   --border-light: #e2e8f0;
   --border-strong: #cbd5e1;
   
   --text-main: #0f172a;
-  --text-muted: #475569;
+  --text-muted: #334155;
   --text-subtle: #64748b;
   --text-light: #94a3b8;
   
+  --header-bg: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+  --header-border: #334155;
+  --header-text: #ffffff;
+
   --brand-primary: #4f46e5;
   --brand-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
   --brand-gradient-hover: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
@@ -48,6 +53,51 @@
   --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Dark Mode Variables (High Contrast) */
+[data-theme="dark"] {
+  --bg-app: #090d16;
+  --bg-surface: #111827;
+  --bg-subtle: #1f2937;
+  --bg-input: #1f2937;
+  
+  --border-light: #1f2937;
+  --border-strong: #374151;
+  
+  --text-main: #f9fafb;
+  --text-muted: #e5e7eb;
+  --text-subtle: #9ca3af;
+  --text-light: #6b7280;
+  
+  --header-bg: linear-gradient(90deg, #030712 0%, #111827 100%);
+  --header-border: #1f2937;
+  --header-text: #ffffff;
+
+  --brand-primary: #6366f1;
+  --brand-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --brand-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+
+  --success-main: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --success-border: rgba(16, 185, 129, 0.35);
+  
+  --danger-main: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-border: rgba(239, 68, 68, 0.35);
+  
+  --warning-main: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-border: rgba(245, 158, 11, 0.35);
+  
+  --info-main: #38bdf8;
+  --info-bg: rgba(56, 189, 248, 0.15);
+  --info-border: rgba(56, 189, 248, 0.35);
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --shadow-brand: 0 4px 14px 0 rgba(99, 102, 241, 0.4);
+}
+
 /* Base Styles */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -60,6 +110,25 @@ body {
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Form Controls and Inputs */
+input, select, textarea {
+  background-color: var(--bg-input);
+  color: var(--text-main);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  transition: var(--transition-fast);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 }
 
 /* Button Normalization - Removes outline/border box artifacts around emojis */
@@ -120,6 +189,7 @@ button img, button span, button svg {
 /* Glass & Surface Cards */
 .saas-card {
   background: var(--bg-surface);
+  color: var(--text-main);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
@@ -165,7 +235,7 @@ button img, button span, button svg {
 .badge-danger { background: var(--danger-bg); color: var(--danger-main); border: 1px solid var(--danger-border); }
 .badge-warning { background: var(--warning-bg); color: var(--warning-main); border: 1px solid var(--warning-border); }
 .badge-info { background: var(--info-bg); color: var(--info-main); border: 1px solid var(--info-border); }
-.badge-brand { background: #e0e7ff; color: var(--brand-primary); border: 1px solid #c7d2fe; }
+.badge-brand { background: rgba(99, 102, 241, 0.15); color: var(--brand-primary); border: 1px solid rgba(99, 102, 241, 0.3); }
 
 /* Buttons */
 .saas-btn {
