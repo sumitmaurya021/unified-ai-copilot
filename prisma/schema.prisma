@@ -210,6 +210,36 @@ model LocalizationPolicyConfig {
   updatedAt                  DateTime @updatedAt
 }
 
+model AdCampaignProfile {
+  id                       String   @id @default(uuid())
+  shop                     String
+  campaignId               String
+  campaignName             String
+  platform                 String   // META_ADS, GOOGLE_PMAX, TIKTOK_ADS, PINTEREST_ADS
+  mappedProductId          String
+  mappedProductTitle       String
+  dailyBudgetUsd           Float
+  platformRoas             Float    // e.g. 1.80
+  trueNetRoas              Float    // e.g. 0.74
+  netProfitContributionUsd Float    // e.g. -42.50 or 380.00
+  aiRecommendation         String   // PAUSE_IMMEDIATELY, SCALE_BUDGET_20X, MAINTAIN_MONITOR
+  campaignStatus           String   @default("ACTIVE_RUNNING") // ACTIVE_RUNNING, PAUSED_AUTONOMOUSLY, SCALED_AUTONOMOUSLY, MANUAL_REVIEW
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model AdPolicyConfig {
+  id                   String   @id @default(uuid())
+  shop                 String   @unique
+  minTrueNetRoas       Float    @default(1.20)
+  autoPauseBleedingAds Boolean  @default(true)
+  autoScaleWinners     Boolean  @default(true)
+  maxDailyScalePercent Int      @default(20)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+
 
 
 
