@@ -96,4 +96,35 @@ model MarginPolicyConfig {
   updatedAt                DateTime @updatedAt
 }
 
+model CatalogItemProfile {
+  id                   String   @id @default(uuid())
+  shop                 String
+  productId            String
+  rawTitle             String
+  healedTitle          String
+  rawDescription       String
+  healedDescription    String
+  rawVendor            String
+  healedVendor         String
+  seoTitle             String
+  seoDescription       String
+  extractedMetafields  String   // JSON string representing extracted attributes
+  aiHealingStatus      String   @default("NEEDS_HEALING") // NEEDS_HEALING, HEALED_READY_FOR_REVIEW, AUTO_PUBLISHED, REJECTED
+  aiQualityScoreRaw    Int
+  aiQualityScoreHealed Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model CatalogPolicyConfig {
+  id                        String   @id @default(uuid())
+  shop                      String   @unique
+  autoPublishThresholdScore Int      @default(90)
+  targetTone                String   @default("Premium & Minimalist")
+  autoExtractMetafields     Boolean  @default(true)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+
 
