@@ -70,27 +70,30 @@ export default function MarginGuardDashboard() {
   const fetcher = useFetcher();
   const shopify = useAppBridge();
 
-  // State for interactive sandbox
-  const [simPrice, setSimPrice] = useState("99.99");
-  const [simCogs, setSimCogs] = useState("25.00");
-  const [simShipping, setSimShipping] = useState("12.00");
-  const [simCac, setSimCac] = useState("35.00");
+  const [simPrice, setSimPrice] = useState("120");
+  const [simCogs, setSimCogs] = useState("45");
+  const [simCac, setSimCac] = useState("35");
+  const [simStock, setSimStock] = useState("12");
 
-  const simAnalysis = analyzePriceElasticity({
-    price: simPrice,
-    cogs: simCogs,
-    averageShippingCost: simShipping,
-    currentCac: simCac,
-    inventoryLevel: 50,
-    restockLeadTimeDays: 14,
+  const simMargin = calculateSkuMargin({
+    currentPrice: parseFloat(simPrice) || 0,
+    cogs: parseFloat(simCogs) || 0,
+    adSpendCac: parseFloat(simCac) || 0,
+  });
+
+  const simElasticity = analyzePriceElasticity({
+    currentPrice: parseFloat(simPrice) || 0,
+    cogs: parseFloat(simCogs) || 0,
+    adSpendCac: parseFloat(simCac) || 0,
+    currentStock: parseInt(simStock) || 0,
   });
 
   useEffect(() => {
     if (fetcher.data?.success) {
       if (fetcher.data.action === "REPRICE") {
-        shopify.toast.show("🚀 AI Recommended Price Applied!");
+        shopify.toast.show("🚀 AI Price Optimization published to Shopify catalog!");
       } else if (fetcher.data.action === "RESET_DEMO") {
-        shopify.toast.show("Demo margin data reset successfully!");
+        shopify.toast.show("Demo margin profiles reset successfully!");
       }
     }
   }, [fetcher.data, shopify]);
@@ -104,211 +107,147 @@ export default function MarginGuardDashboard() {
   };
 
   return (
-    <s-page heading="📈 MarginGuard AI — Real-Time Unit Economics & Profit Repricer">
-      <s-button slot="primary-action" onClick={handleResetDemo}>
-        🔄 Reset Demo Data
-      </s-button>
-
-      {/* KPI Stats Section */}
-      <s-section heading="Autonomous CFO Financial Telemetry">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
-          <div style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", color: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)" }}>
-            <div style={{ fontSize: "14px", fontWeight: "600", opacity: 0.9 }}>📊 AVERAGE STORE NET MARGIN</div>
-            <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px", color: parseFloat(stats.avgMarginPct) >= 20 ? "#34d399" : "#fbbf24" }}>{stats.avgMarginPct}%</div>
-            <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Target threshold: 20.0% net contribution</div>
-          </div>
-
-          <div style={{ background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)", color: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)" }}>
-            <div style={{ fontSize: "14px", fontWeight: "600", opacity: 0.9 }}>🚨 UNPROFITABLE SKUS FLAGGED</div>
-            <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.unprofitableCount} / {stats.totalSkus}</div>
-            <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Ad CAC & shipping exceed item gross profit</div>
-          </div>
-
-          <div style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)", color: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)" }}>
-            <div style={{ fontSize: "14px", fontWeight: "600", opacity: 0.9 }}>🤖 AI PRICE OPTIMIZATIONS</div>
-            <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.activeOptimizations} Active</div>
-            <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Elasticity tests & inventory preservation</div>
-          </div>
+    <div style={{ padding: "24px", maxWidth: "1280px", margin: "0 auto", fontFamily: "'Inter', sans-serif" }}>
+      
+      {/* Module Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", gap: "12px", flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ fontSize: "26px", fontWeight: "800", color: "#0f172a", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>
+            📈 MarginGuard AI — Dynamic Profit & Elasticity Repricer
+          </h1>
+          <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>
+            Real-time net contribution margins factoring in Meta/Google CAC and payment gateway fees.
+          </p>
         </div>
-      </s-section>
 
-      {/* Interactive Sandbox Section */}
-      <s-section heading="🔬 Live Unit Profit Sandbox & Elasticity Calculator">
-        <s-paragraph>
-          Test how MarginGuard AI monitors ad spend inflation (Meta/Google CAC) and shipping costs to calculate real-time net contribution. Notice how the AI Copilot dynamically recommends price adjustments to guarantee unit profitability.
-        </s-paragraph>
+        <button onClick={handleResetDemo} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "white", fontSize: "13px", fontWeight: "600", cursor: "pointer", color: "#334155", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <span>🔄</span> Reset Margin Profiles
+        </button>
+      </div>
 
-        <div style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "12px", padding: "20px", marginTop: "16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
-          <div>
-            <h4 style={{ margin: "0 0 12px 0", fontSize: "16px", color: "#1e293b" }}>1. Input SKU Cost Variables</h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      {/* Telemetry Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", marginBottom: "28px" }}>
+        <div style={{ background: "linear-gradient(135deg, #065f46 0%, #10b981 100%)", padding: "20px", borderRadius: "12px", color: "white", boxShadow: "0 4px 12px rgba(16, 185, 129, 0.25)" }}>
+          <div style={{ fontSize: "12px", fontWeight: "700", opacity: 0.9 }}>📊 AVERAGE PORTFOLIO MARGIN</div>
+          <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.avgMarginPct}%</div>
+          <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Net contribution after CAC & fees</div>
+        </div>
+
+        <div style={{ background: "linear-gradient(135deg, #991b1b 0%, #dc2626 100%)", padding: "20px", borderRadius: "12px", color: "white", boxShadow: "0 4px 12px rgba(220, 38, 38, 0.25)" }}>
+          <div style={{ fontSize: "12px", fontWeight: "700", opacity: 0.9 }}>🚨 UNPROFITABLE SKUS</div>
+          <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.unprofitableCount} Bleeding SKUs</div>
+          <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Selling below break-even contribution</div>
+        </div>
+
+        <div style={{ background: "linear-gradient(135deg, #312e81 0%, #4f46e5 100%)", padding: "20px", borderRadius: "12px", color: "white", boxShadow: "0 4px 12px rgba(79, 70, 229, 0.25)" }}>
+          <div style={{ fontSize: "12px", fontWeight: "700", opacity: 0.9 }}>🚀 ACTIONABLE OPTIMIZATIONS</div>
+          <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.activeOptimizations} SKUs</div>
+          <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Ready for AI dynamic repricing</div>
+        </div>
+      </div>
+
+      {/* Simulator */}
+      <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "24px", marginBottom: "32px", boxShadow: "0 2px 6px rgba(0,0,0,0.04)" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", margin: "0 0 8px 0" }}>
+          🔬 Live Net Profit & Elasticity Sandbox
+        </h2>
+        <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px 0" }}>
+          Test SKU economics in real-time to watch AI calculate exact net margin dollar contribution and recommend scarcity price bumps:
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", background: "#f8fafc", padding: "20px", borderRadius: "10px", border: "1px solid #cbd5e1" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Retail Selling Price ($)</label>
-                <input
-                  type="number"
-                  value={simPrice}
-                  onChange={(e) => setSimPrice(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }}
-                />
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Current Price ($)</label>
+                <input type="number" value={simPrice} onChange={(e) => setSimPrice(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px", fontWeight: "700" }} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Item COGS (Cost of Goods Sold $)</label>
-                <input
-                  type="number"
-                  value={simCogs}
-                  onChange={(e) => setSimCogs(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }}
-                />
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Unit COGS ($)</label>
+                <input type="number" value={simCogs} onChange={(e) => setSimCogs(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }} />
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Ad CAC ($)</label>
+                <input type="number" value={simCac} onChange={(e) => setSimCac(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }} />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Average Shipping Cost ($)</label>
-                <input
-                  type="number"
-                  value={simShipping}
-                  onChange={(e) => setSimShipping(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Current Ad CAC (Customer Acquisition Cost $)</label>
-                <input
-                  type="number"
-                  value={simCac}
-                  onChange={(e) => setSimCac(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }}
-                />
+                <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Current Stock</label>
+                <input type="number" value={simStock} onChange={(e) => setSimStock(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "14px" }} />
               </div>
             </div>
           </div>
 
-          <div style={{ background: "white", padding: "16px", borderRadius: "8px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <div style={{ background: "white", padding: "16px", borderRadius: "8px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                <span style={{ fontSize: "16px", fontWeight: "700", color: "#0f172a" }}>2. AI CFO Net Contribution Analysis</span>
-                <span style={{
-                  padding: "4px 10px",
-                  borderRadius: "20px",
-                  fontSize: "12px",
-                  fontWeight: "700",
-                  backgroundColor: simAnalysis.status === "LOW_MARGIN_ALERT" ? "#fee2e2" : "#d1fae5",
-                  color: simAnalysis.status === "LOW_MARGIN_ALERT" ? "#991b1b" : "#065f46"
-                }}>
-                  {simAnalysis.status}
+              <div style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", marginBottom: "12px" }}>
+                🧠 AI Profit Telemetry
+              </div>
+              <div style={{ fontSize: "12px", color: "#475569", lineHeight: "1.6" }}>
+                • <strong>Gross Revenue:</strong> ${simPrice}<br />
+                • <strong>Deductions:</strong> COGS (${simCogs}) + CAC (${simCac}) + Gateway Fee (${simMargin.gatewayFee})<br />
+                • <strong>Net Profit / Unit:</strong> <span style={{ color: simMargin.netMarginDollar >= 0 ? "#059669" : "#dc2626", fontWeight: "800" }}>${simMargin.netMarginDollar} ({simMargin.netMarginPercent}%)</span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "12px", padding: "10px", borderRadius: "6px", backgroundColor: "#e0e7ff", border: "1px solid #c7d2fe", fontSize: "12px", fontWeight: "800", color: "#3730a3" }}>
+              AI Price Suggestion: ${simElasticity.recommendedPrice} ({simElasticity.rationale})
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SKU Portfolio Queue */}
+      <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", marginBottom: "16px" }}>
+        ⚡ SKU Portfolio Profitability & Repricing Queue
+      </h2>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {profiles.map((p) => {
+          let statusBg = "#f1f5f9";
+          let statusColor = "#475569";
+          if (p.aiRepricingStatus === "OPTIMAL") { statusBg = "#ecfdf5"; statusColor = "#059669"; }
+          if (p.aiRepricingStatus === "UNPROFITABLE_BLEED") { statusBg = "#fef2f2"; statusColor = "#dc2626"; }
+          if (p.aiRepricingStatus === "SCARCITY_PRICE_BUMP") { statusBg = "#e0e7ff"; statusColor = "#4f46e5"; }
+
+          return (
+            <div key={p.id} style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 6px rgba(0,0,0,0.03)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                <div>
+                  <span style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a" }}>📦 {p.productTitle}</span>
+                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "#64748b" }}>SKU ID: {p.productId.split("/").pop()}</span>
+                </div>
+                <span style={{ padding: "4px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "800", backgroundColor: statusBg, color: statusColor }}>
+                  {p.aiRepricingStatus}
                 </span>
               </div>
 
-              <div style={{ fontSize: "13px", color: "#475569", lineHeight: "1.6" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "4px" }}>
-                  <span>Gross Profit (Price - COGS):</span>
-                  <strong>${simAnalysis.marginBreakdown.grossMarginDollar}</strong>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "16px" }}>
+                <div style={{ fontSize: "13px", color: "#334155", lineHeight: "1.5", minWidth: 0 }}>
+                  <strong>Current Price:</strong> ${p.currentPrice} | <strong>COGS:</strong> ${p.cogs} | <strong>Ad CAC:</strong> ${p.adSpendCac}<br />
+                  <strong>Net Contribution / Unit:</strong> <span style={{ fontWeight: "800", color: p.netMarginDollar >= 0 ? "#059669" : "#dc2626" }}>${p.netMarginDollar} ({p.netMarginPercent}%)</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", padding: "4px 0" }}>
-                  <span>Shipping Fee:</span>
-                  <span>-${simAnalysis.marginBreakdown.averageShippingCost}</span>
+
+                <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px", color: "#475569", minWidth: 0 }}>
+                  <strong>AI Recommendation:</strong><br />
+                  Set price to <strong>${p.recommendedPrice}</strong> ({p.aiRationale})
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", padding: "4px 0" }}>
-                  <span>Ad Spend CAC (Meta/Google):</span>
-                  <span style={{ color: "#ef4444" }}>-${simAnalysis.marginBreakdown.currentCac}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", padding: "4px 0" }}>
-                  <span>Payment Processor Fee (2.9% + $0.30):</span>
-                  <span>-${simAnalysis.marginBreakdown.paymentFee}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "6px", fontSize: "15px", fontWeight: "800", color: "#0f172a" }}>
-                  <span>Net Contribution Profit:</span>
-                  <span style={{ color: parseFloat(simAnalysis.marginBreakdown.netMarginDollar) >= 0 ? "#10b981" : "#ef4444" }}>
-                    ${simAnalysis.marginBreakdown.netMarginDollar} ({simAnalysis.marginBreakdown.netMarginPercent}%)
-                  </span>
-                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", background: "#f8fafc", padding: "10px", borderRadius: "8px" }}>
+                {p.currentPrice !== p.recommendedPrice && (
+                  <button onClick={() => handleReprice(p.id, p.recommendedPrice)} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)", color: "white", fontSize: "12px", fontWeight: "700", cursor: "pointer", boxShadow: "0 2px 8px rgba(79,70,229,0.25)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <span>🚀</span> Apply AI Recommended Price (${p.recommendedPrice})
+                  </button>
+                )}
               </div>
             </div>
+          );
+        })}
+      </div>
 
-            <div style={{ marginTop: "16px", padding: "12px", backgroundColor: "#f8fafc", borderRadius: "6px", borderLeft: "4px solid #6366f1", fontSize: "13px", color: "#334155" }}>
-              <strong>AI Repricer Recommendation:</strong> {simAnalysis.rationale}
-              <div style={{ marginTop: "8px", fontWeight: "700", color: "#4f46e5" }}>
-                💡 Target Optimal Price: ${simAnalysis.recommendedPrice}
-              </div>
-            </div>
-          </div>
-        </div>
-      </s-section>
-
-      {/* Live SKU Portfolio Section */}
-      <s-section heading="⚡ Live SKU Portfolio & Autonomous Repricing Queue">
-        <s-paragraph>
-          Real-time unit economic audit across your catalog. MarginGuard AI monitors CAC spikes and stock scarcity, recommending 1-click price optimizations via Shopify Functions.
-        </s-paragraph>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
-          {profiles.map((p) => {
-            // Status badge styles
-            let badgeBg = "#f1f5f9";
-            let badgeColor = "#475569";
-            if (p.aiRepricingStatus === "LOW_MARGIN_ALERT") { badgeBg = "#fee2e2"; badgeColor = "#991b1b"; }
-            if (p.aiRepricingStatus === "INVENTORY_PROTECTION_ACTIVE") { badgeBg = "#fef3c7"; badgeColor = "#92400e"; }
-            if (p.aiRepricingStatus === "ELASTICITY_TEST_ACTIVE") { badgeBg = "#e0e7ff"; badgeColor = "#3730a3"; }
-            if (p.aiRepricingStatus === "OPTIMAL") { badgeBg = "#d1fae5"; badgeColor = "#065f46"; }
-
-            return (
-              <div key={p.id} style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "18px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "12px" }}>
-                  <div>
-                    <span style={{ fontSize: "16px", fontWeight: "700", color: "#0f172a" }}>{p.productTitle}</span>
-                    <span style={{ marginLeft: "10px", fontSize: "13px", color: "#64748b" }}>(SKU: {p.sku})</span>
-                  </div>
-                  <div>
-                    <span style={{ padding: "4px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "700", backgroundColor: badgeBg, color: badgeColor, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                      {p.aiRepricingStatus.replace(/_/g, " ")}
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 280px", gap: "20px", alignItems: "center" }}>
-                  {/* Stock & Price */}
-                  <div style={{ background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                    <div style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>${p.price.toFixed(2)}</div>
-                    <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
-                      📦 Stock: <strong>{p.inventoryLevel}</strong> units
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#64748b" }}>
-                      🚚 Restock: <strong>{p.restockLeadTimeDays}d</strong> lead time
-                    </div>
-                  </div>
-
-                  {/* Economics & Rationale */}
-                  <div>
-                    <div style={{ display: "flex", gap: "12px", fontSize: "12px", color: "#475569", marginBottom: "8px", background: "#f1f5f9", padding: "6px 10px", borderRadius: "6px" }}>
-                      <span>COGS: <strong>${p.cogs.toFixed(2)}</strong></span> •
-                      <span>Ship: <strong>${p.averageShippingCost.toFixed(2)}</strong></span> •
-                      <span>Ad CAC: <strong style={{ color: "#ef4444" }}>${p.currentCac.toFixed(2)}</strong></span>
-                    </div>
-                    <div style={{ fontSize: "13px", color: "#334155", lineHeight: "1.5" }}>
-                      <strong>AI Rationale:</strong> {p.aiRepricingRationale}
-                    </div>
-                  </div>
-
-                  {/* Actions & Net Margin */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                    <div style={{ textAlign: "center", fontSize: "14px", fontWeight: "800", color: p.netMarginDollar >= 0 ? "#059669" : "#dc2626", marginBottom: "4px" }}>
-                      Net Profit: ${p.netMarginDollar.toFixed(2)} ({p.netMarginPercent.toFixed(1)}%)
-                    </div>
-
-                    {p.aiRepricingStatus !== "OPTIMAL" ? (
-                      <s-button onClick={() => handleReprice(p.id, p.aiRecommendedPrice)}>
-                        🚀 Apply AI Price (${p.aiRecommendedPrice.toFixed(2)})
-                      </s-button>
-                    ) : (
-                      <div style={{ textAlign: "center", fontSize: "12px", color: "#64748b", padding: "6px 0" }}>
-                        ✅ Price Optimal & Highly Profitable
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </s-section>
-    </s-page>
+    </div>
   );
 }

@@ -34,7 +34,7 @@ export const loader = async ({ request }) => {
       const mf = JSON.parse(item.extractedMetafields || "{}");
       totalMetafieldsExtracted += Object.keys(mf).length;
     } catch (e) {
-      // ignore parse error
+      // ignore
     }
   }
 
@@ -60,11 +60,10 @@ export const action = async ({ request }) => {
   const formData = await request.formData();
   const actionType = formData.get("actionType");
 
-  if (actionType === "RESOLVE") {
+  if (actionType === "PUBLISH") {
     const id = formData.get("id");
-    const resolution = formData.get("resolution"); // PUBLISH or REJECT
-    await executeCatalogPublish(prisma, id, resolution);
-    return { success: true, action: "RESOLVE", resolution };
+    await executeCatalogPublish(prisma, id);
+    return { success: true, action: "PUBLISH" };
   }
 
   if (actionType === "RESET_DEMO") {
@@ -81,28 +80,24 @@ export default function CatalogAlchemyDashboard() {
   const fetcher = useFetcher();
   const shopify = useAppBridge();
 
-  // State for interactive sandbox
-  const [simTitle, setSimTitle] = useState("HOT SALE!! 2024 Newest Men Womens Running Shoes Breathable Mesh Sport Sneakers Size 36-45 CHEAP");
-  const [simDesc, setSimDesc] = useState("good quality running shoes mesh breathable comfortable sport shoes for men women outdoor gym running cheap price factory direct sale buy now fast shipping!");
-  
-  const simHealed = healCatalogItem({
-    rawTitle: simTitle,
-    rawDescription: simDesc,
-    rawVendor: "AliExpress Wholesale",
-  });
+  const [simTitle, setSimTitle] = useState("2026 NEW HOT SALE CHEAP MENS SNEAKER ATHLETIC SHOE");
+  const [simDesc, setSimDesc] = useState("Good shoe cheap price buy now fast shipping size 10 11 12.");
+
+  const simRawScoreObj = calculateCatalogQualityScore({ rawTitle: simTitle, rawDescription: simDesc });
+  const simHealed = healCatalogItem({ rawTitle: simTitle, rawDescription: simDesc, vendor: "Alibaba Direct" });
 
   useEffect(() => {
     if (fetcher.data?.success) {
-      if (fetcher.data.action === "RESOLVE") {
-        shopify.toast.show(`Catalog item ${fetcher.data.resolution === "PUBLISH" ? "Published to Shopify" : "Rejected"}!`);
+      if (fetcher.data.action === "PUBLISH") {
+        shopify.toast.show("✨ Healed listing & Shopify 2.0 Metafields published to store!");
       } else if (fetcher.data.action === "RESET_DEMO") {
-        shopify.toast.show("Demo catalog data reset successfully!");
+        shopify.toast.show("Demo catalog items reset successfully!");
       }
     }
   }, [fetcher.data, shopify]);
 
-  const handleResolve = (id, resolution) => {
-    fetcher.submit({ actionType: "RESOLVE", id, resolution }, { method: "POST" });
+  const handlePublish = (id) => {
+    fetcher.submit({ actionType: "PUBLISH", id }, { method: "POST" });
   };
 
   const handleResetDemo = () => {
@@ -110,204 +105,156 @@ export default function CatalogAlchemyDashboard() {
   };
 
   return (
-    <s-page heading="✨ CatalogAlchemy AI — Autonomous Catalog Healing & Metafield Mapper">
-      <s-button slot="primary-action" onClick={handleResetDemo}>
-        🔄 Reset Demo Data
-      </s-button>
-
-      {/* KPI Stats Section */}
-      <s-section heading="AI Alchemist Quality Telemetry">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
-          <div style={{ background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)", color: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)" }}>
-            <div style={{ fontSize: "14px", fontWeight: "600", opacity: 0.9 }}>🧪 AVG QUALITY SCORE JUMP</div>
-            <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.avgRaw} ➔ {stats.avgHealed} <span style={{ fontSize: "20px", color: "#a7f3d0" }}>(+{stats.scoreJump} pts)</span></div>
-            <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Converted from ALL-CAPS supplier spam</div>
-          </div>
-
-          <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)" }}>
-            <div style={{ fontSize: "14px", fontWeight: "600", opacity: 0.9 }}>📦 PRODUCTS HEALED & PUBLISHED</div>
-            <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.totalPublished} / {stats.totalItems}</div>
-            <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Auto-standardized with brand style guide</div>
-          </div>
-
-          <div style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)", color: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.2)" }}>
-            <div style={{ fontSize: "14px", fontWeight: "600", opacity: 0.9 }}>🏷️ SEMANTIC METAFIELDS EXTRACTED</div>
-            <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.totalMetafieldsExtracted} Attributes</div>
-            <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Mapped to Shopify 2.0 storefront filters</div>
-          </div>
+    <div style={{ padding: "24px", maxWidth: "1280px", margin: "0 auto", fontFamily: "'Inter', sans-serif" }}>
+      
+      {/* Module Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", gap: "12px", flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ fontSize: "26px", fontWeight: "800", color: "#0f172a", margin: "0 0 4px 0", letterSpacing: "-0.01em" }}>
+            ✨ CatalogAlchemy AI — Autonomous Catalog Healing & Metafield Mapper
+          </h1>
+          <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>
+            Strips supplier spam, rewrites conversion titles, and maps JSON metafields for Shopify 2.0 storefront filters.
+          </p>
         </div>
-      </s-section>
 
-      {/* Interactive Alchemist Sandbox Section */}
-      <s-section heading="🔬 Live AI Alchemist Sandbox & Metafield Extractor">
-        <s-paragraph>
-          Paste any messy supplier import title and wall-of-text description below. Notice how CatalogAlchemy AI strips ALL-CAPS keyword spam, formats benefit bullet points, generates SEO meta tags, and extracts structured attributes for Shopify filters.
-        </s-paragraph>
+        <button onClick={handleResetDemo} style={{ padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "white", fontSize: "13px", fontWeight: "600", cursor: "pointer", color: "#334155", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <span>🔄</span> Reset Catalog Items
+        </button>
+      </div>
 
-        <div style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "12px", padding: "20px", marginTop: "16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
-          <div>
-            <h4 style={{ margin: "0 0 12px 0", fontSize: "16px", color: "#1e293b" }}>❌ 1. Paste Raw Supplier Import</h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Raw Title (AliExpress / CJ / ERP)</label>
-                <textarea
-                  rows="3"
-                  value={simTitle}
-                  onChange={(e) => setSimTitle(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "13px", fontFamily: "monospace" }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#475569", marginBottom: "4px" }}>Raw Description</label>
-                <textarea
-                  rows="6"
-                  value={simDesc}
-                  onChange={(e) => setSimDesc(e.target.value)}
-                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "13px", fontFamily: "monospace" }}
-                />
-              </div>
+      {/* Telemetry Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", marginBottom: "28px" }}>
+        <div style={{ background: "linear-gradient(135deg, #312e81 0%, #7c3aed 100%)", padding: "20px", borderRadius: "12px", color: "white", boxShadow: "0 4px 12px rgba(124, 58, 237, 0.25)" }}>
+          <div style={{ fontSize: "12px", fontWeight: "700", opacity: 0.9 }}>📈 AVERAGE HEALED QUALITY SCORE</div>
+          <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.avgHealed} / 100</div>
+          <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>+{stats.scoreJump} points boost over raw import ({stats.avgRaw})</div>
+        </div>
+
+        <div style={{ background: "linear-gradient(135deg, #065f46 0%, #10b981 100%)", padding: "20px", borderRadius: "12px", color: "white", boxShadow: "0 4px 12px rgba(16, 185, 129, 0.25)" }}>
+          <div style={{ fontSize: "12px", fontWeight: "700", opacity: 0.9 }}>✨ PUBLISHED HEALED LISTINGS</div>
+          <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.totalPublished} / {stats.totalItems} SKUs</div>
+          <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Live on Shopify 2.0 Storefront</div>
+        </div>
+
+        <div style={{ background: "linear-gradient(135deg, #0284c7 0%, #06b6d4 100%)", padding: "20px", borderRadius: "12px", color: "white", boxShadow: "0 4px 12px rgba(6, 182, 212, 0.25)" }}>
+          <div style={{ fontSize: "12px", fontWeight: "700", opacity: 0.9 }}>🏷️ EXTRACTED METAFIELDS</div>
+          <div style={{ fontSize: "32px", fontWeight: "800", marginTop: "8px" }}>{stats.totalMetafieldsExtracted} Metafields</div>
+          <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.8 }}>Material, care, fit & origin attributes</div>
+        </div>
+      </div>
+
+      {/* Simulator */}
+      <div style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "24px", marginBottom: "32px", boxShadow: "0 2px 6px rgba(0,0,0,0.04)" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", margin: "0 0 8px 0" }}>
+          🔬 Live Catalog Alchemist Sandbox
+        </h2>
+        <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px 0" }}>
+          Paste raw supplier titles/descriptions below to watch AI strip spam and generate structured Shopify 2.0 listings:
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", background: "#f8fafc", padding: "20px", borderRadius: "10px", border: "1px solid #cbd5e1" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Raw Supplier Title</label>
+              <input type="text" value={simTitle} onChange={(e) => setSimTitle(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "13px" }} />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>Raw Description</label>
+              <textarea rows={3} value={simDesc} onChange={(e) => setSimDesc(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #94a3b8", fontSize: "13px" }} />
+            </div>
+
+            <div style={{ marginTop: "10px", fontSize: "11px", color: "#dc2626", fontWeight: "700" }}>
+              Raw Supplier Score: {simRawScoreObj.score}/100 (Contains caps spam / missing metafields)
             </div>
           </div>
 
-          <div style={{ background: "white", padding: "16px", borderRadius: "8px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <div style={{ background: "white", padding: "16px", borderRadius: "8px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0 }}>
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                <span style={{ fontSize: "16px", fontWeight: "700", color: "#0f172a" }}>✨ 2. AI Healed Listing & Metafields</span>
-                <span style={{ padding: "4px 10px", borderRadius: "20px", fontSize: "12px", fontWeight: "700", backgroundColor: "#d1fae5", color: "#065f46" }}>
-                  Score: {simHealed.scoreRaw} ➔ {simHealed.scoreHealed} (+{simHealed.scoreHealed - simHealed.scoreRaw})
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: "8px", marginBottom: "12px", gap: "8px" }}>
+                <span style={{ fontSize: "14px", fontWeight: "800", color: "#0f172a" }}>🧠 AI Healed Listing</span>
+                <span style={{ backgroundColor: "#ecfdf5", color: "#059669", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "800", whiteSpace: "nowrap" }}>
+                  Score: {simHealed.scoreHealed}/100
                 </span>
               </div>
-
-              <div style={{ fontSize: "13px", color: "#334155" }}>
-                <div style={{ marginBottom: "8px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase" }}>Healed Brand Title:</span>
-                  <div style={{ fontSize: "15px", fontWeight: "700", color: "#0f172a", marginTop: "2px" }}>{simHealed.healedTitle}</div>
-                </div>
-
-                <div style={{ marginBottom: "12px", background: "#f8fafc", padding: "10px", borderRadius: "6px", maxHeight: "150px", overflowY: "auto", fontSize: "12px", lineHeight: "1.5" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Healed Markdown Description:</span>
-                  <pre style={{ whiteSpace: "pre-wrap", margin: 0, fontFamily: "inherit" }}>{simHealed.healedDescription}</pre>
-                </div>
-
-                <div>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Extracted Shopify 2.0 Metafields:</span>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                    {Object.entries(JSON.parse(simHealed.extractedMetafields || "{}")).map(([k, v]) => (
-                      <span key={k} style={{ padding: "3px 8px", backgroundColor: "#e0e7ff", color: "#3730a3", borderRadius: "6px", fontSize: "11px", fontWeight: "600" }}>
-                        {k.replace("custom.", "")}: <strong>{v}</strong>
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              <div style={{ fontSize: "13px", fontWeight: "800", color: "#7c3aed", marginBottom: "6px", wordBreak: "break-word" }}>
+                {simHealed.healedTitle}
+              </div>
+              <div style={{ fontSize: "11px", color: "#475569", lineHeight: "1.4", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                {simHealed.healedDescription}
               </div>
             </div>
 
-            <div style={{ marginTop: "16px", padding: "10px", backgroundColor: "#f0fdf4", borderRadius: "6px", borderLeft: "4px solid #10b981", fontSize: "12px", color: "#065f46" }}>
-              ✅ <strong>SEO Alchemist Verified:</strong> Title tag & description optimized for Google search and Shopify storefront filters.
+            <div style={{ marginTop: "12px", padding: "8px", borderRadius: "6px", backgroundColor: "#f0f9ff", border: "1px solid #bae6fd", fontSize: "11px", color: "#0369a1", fontWeight: "700", wordBreak: "break-all" }}>
+              Extracted Metafields: {simHealed.extractedMetafields}
             </div>
           </div>
         </div>
-      </s-section>
+      </div>
 
-      {/* Live Catalog Healing Queue Section */}
-      <s-section heading="⚡ Live Catalog Healing Queue (Side-by-Side Diffs)">
-        <s-paragraph>
-          Review imported supplier products. CatalogAlchemy AI pre-computes healed titles, formatting, and metafields. 1-click publishing updates your live Shopify catalog via GraphQL.
-        </s-paragraph>
+      {/* Catalog Queue */}
+      <h2 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", marginBottom: "16px" }}>
+        ⚡ Catalog Listings Healing Queue
+      </h2>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginTop: "16px" }}>
-          {items.map((item) => {
-            let extractedObj = {};
-            try {
-              extractedObj = JSON.parse(item.extractedMetafields || "{}");
-            } catch (e) {}
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        {items.map((item) => {
+          let statusBg = "#f1f5f9";
+          let statusColor = "#475569";
+          if (item.aiHealingStatus === "AUTO_PUBLISHED") { statusBg = "#ecfdf5"; statusColor = "#059669"; }
+          if (item.aiHealingStatus === "HEALED_DRAFT") { statusBg = "#e0e7ff"; statusColor = "#4f46e5"; }
 
-            let statusBg = "#f1f5f9";
-            let statusColor = "#475569";
-            if (item.aiHealingStatus === "AUTO_PUBLISHED") { statusBg = "#d1fae5"; statusColor = "#065f46"; }
-            if (item.aiHealingStatus === "HEALED_READY_FOR_REVIEW") { statusBg = "#e0e7ff"; statusColor = "#3730a3"; }
-            if (item.aiHealingStatus === "REJECTED") { statusBg = "#fee2e2"; statusColor = "#991b1b"; }
-
-            return (
-              <div key={item.id} style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px", boxShadow: "0 4px 6px rgba(0,0,0,0.02)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid #f1f5f9", paddingBottom: "12px" }}>
-                  <div>
-                    <span style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a" }}>Product ID: {item.productId.replace("gid://shopify/Product/", "#")}</span>
-                    <span style={{ marginLeft: "12px", padding: "3px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "700", backgroundColor: "#f3f4f6", color: "#475569" }}>
-                      Vendor: {item.rawVendor}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ fontSize: "13px", fontWeight: "700", color: "#059669" }}>
-                      Score: {item.aiQualityScoreRaw} ➔ {item.aiQualityScoreHealed} (+{item.aiQualityScoreHealed - item.aiQualityScoreRaw} pts)
-                    </span>
-                    <span style={{ padding: "4px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "700", backgroundColor: statusBg, color: statusColor, textTransform: "uppercase" }}>
-                      {item.aiHealingStatus.replace(/_/g, " ")}
-                    </span>
-                  </div>
+          return (
+            <div key={item.id} style={{ background: "white", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 6px rgba(0,0,0,0.03)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                <div>
+                  <span style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a" }}>✨ {item.healedTitle}</span>
+                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "#64748b" }}>Vendor: {item.vendor}</span>
                 </div>
-
-                {/* Side-by-Side Diff Grid */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "16px" }}>
-                  {/* Left: Raw Supplier Import */}
-                  <div style={{ background: "#fff1f2", padding: "14px", borderRadius: "8px", border: "1px solid #fecdd3" }}>
-                    <div style={{ fontSize: "12px", fontWeight: "700", color: "#991b1b", textTransform: "uppercase", marginBottom: "6px" }}>
-                      ❌ Raw Supplier Import (Score: {item.aiQualityScoreRaw}/100)
-                    </div>
-                    <div style={{ fontSize: "14px", fontWeight: "700", color: "#7f1d1d", marginBottom: "8px" }}>
-                      {item.rawTitle}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#881337", maxHeight: "100px", overflowY: "auto", fontFamily: "monospace" }}>
-                      {item.rawDescription}
-                    </div>
-                  </div>
-
-                  {/* Right: AI Healed Listing */}
-                  <div style={{ background: "#f0fdf4", padding: "14px", borderRadius: "8px", border: "1px solid #a7f3d0" }}>
-                    <div style={{ fontSize: "12px", fontWeight: "700", color: "#065f46", textTransform: "uppercase", marginBottom: "6px" }}>
-                      ✨ AI Healed & Standardized (Score: {item.aiQualityScoreHealed}/100)
-                    </div>
-                    <div style={{ fontSize: "15px", fontWeight: "800", color: "#064e3b", marginBottom: "8px" }}>
-                      {item.healedTitle}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#065f46", maxHeight: "100px", overflowY: "auto", marginBottom: "10px", whiteSpace: "pre-wrap" }}>
-                      {item.healedDescription}
-                    </div>
-                    <div>
-                      <span style={{ fontSize: "11px", fontWeight: "700", color: "#047857", display: "block", marginBottom: "4px" }}>Extracted Semantic Metafields:</span>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                        {Object.entries(extractedObj).map(([k, v]) => (
-                          <span key={k} style={{ padding: "2px 6px", backgroundColor: "#d1fae5", color: "#065f46", borderRadius: "4px", fontSize: "11px", fontWeight: "600" }}>
-                            {k.replace("custom.", "")}: {v}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions Bar */}
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                  {item.aiHealingStatus !== "AUTO_PUBLISHED" ? (
-                    <>
-                      <s-button onClick={() => handleResolve(item.id, "PUBLISH")}>
-                        🚀 Publish Healed Listing to Shopify
-                      </s-button>
-                      <s-button onClick={() => handleResolve(item.id, "REJECT")}>
-                        🚫 Reject Alchemist Draft
-                      </s-button>
-                    </>
-                  ) : (
-                    <div style={{ fontSize: "13px", fontWeight: "700", color: "#059669", padding: "4px 0" }}>
-                      ✅ Listing Published & Standardized on Storefront
-                    </div>
-                  )}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ padding: "4px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "800", backgroundColor: "#fef2f2", color: "#dc2626" }}>
+                    Raw: {item.aiQualityScoreRaw}/100
+                  </span>
+                  <span style={{ padding: "4px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "800", backgroundColor: "#ecfdf5", color: "#059669" }}>
+                    Healed: {item.aiQualityScoreHealed}/100
+                  </span>
+                  <span style={{ padding: "4px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "800", backgroundColor: statusBg, color: statusColor }}>
+                    {item.aiHealingStatus}
+                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </s-section>
-    </s-page>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "16px" }}>
+                <div style={{ background: "#fffbeb", padding: "12px", borderRadius: "8px", border: "1px solid #fde68a", minWidth: 0 }}>
+                  <div style={{ fontSize: "11px", fontWeight: "800", color: "#b45309", marginBottom: "4px" }}>
+                    🔴 RAW SUPPLIER IMPORT:
+                  </div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: "#78350f" }}>"{item.rawTitle}"</div>
+                  <div style={{ fontSize: "11px", color: "#92400e", marginTop: "4px" }}>"{item.rawDescription}"</div>
+                </div>
+
+                <div style={{ background: "#f0fdf4", padding: "12px", borderRadius: "8px", border: "1px solid #a7f3d0", minWidth: 0 }}>
+                  <div style={{ fontSize: "11px", fontWeight: "800", color: "#065f46", marginBottom: "4px" }}>
+                    🟢 AI HEALED STOREFRONT LISTING:
+                  </div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: "#047857" }}>"{item.healedTitle}"</div>
+                  <div style={{ fontSize: "11px", color: "#065f46", marginTop: "4px" }}>Metafields: {item.extractedMetafields}</div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", background: "#f8fafc", padding: "10px", borderRadius: "8px" }}>
+                {item.aiHealingStatus !== "AUTO_PUBLISHED" && (
+                  <button onClick={() => handlePublish(item.id)} style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)", color: "white", fontSize: "12px", fontWeight: "700", cursor: "pointer", boxShadow: "0 2px 8px rgba(124,58,237,0.25)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <span>🚀</span> Publish Healed Listing to Shopify
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+    </div>
   );
 }

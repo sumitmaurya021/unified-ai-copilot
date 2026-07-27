@@ -8,32 +8,37 @@
  */
 export function calculateCatalogQualityScore({
   title = "",
+  rawTitle = "",
   description = "",
+  rawDescription = "",
   vendor = "",
   metafieldsCount = 0,
 }) {
+  const targetTitle = title || rawTitle || "";
+  const targetDescription = description || rawDescription || "";
+
   let score = 100;
   const penalties = [];
 
   // Title checks
-  if (title && title === title.toUpperCase() && title.length > 5) {
+  if (targetTitle && targetTitle === targetTitle.toUpperCase() && targetTitle.length > 5) {
     score -= 25;
     penalties.push("ALL CAPS spammy title formatting (-25 pts)");
   }
-  if (title.length < 12 || title.length > 85) {
+  if (targetTitle.length < 12 || targetTitle.length > 85) {
     score -= 15;
     penalties.push("Title length is suboptimal for SEO (<12 or >85 chars) (-15 pts)");
   }
-  if (/[!$?*%]{2,}/.test(title) || /HOT SALE|NEWEST|CHEAP|FREE/i.test(title)) {
+  if (/[!$?*%]{2,}/.test(targetTitle) || /HOT SALE|NEWEST|CHEAP|FREE/i.test(targetTitle)) {
     score -= 20;
     penalties.push("Contains promotional keyword spam or special symbols (-20 pts)");
   }
 
   // Description checks
-  if (!description || description.length < 60) {
+  if (!targetDescription || targetDescription.length < 60) {
     score -= 30;
     penalties.push("Thin content: description is under 60 characters (-30 pts)");
-  } else if (!/[-*•]|\b1\.\s|\b2\.\s/.test(description)) {
+  } else if (!/[-*•]|\b1\.\s|\b2\.\s/.test(targetDescription)) {
     score -= 20;
     penalties.push("Wall of text: lacks bullet points or scannable formatting (-20 pts)");
   }
@@ -60,7 +65,6 @@ export function healCatalogItem({
   targetTone = "Premium & Minimalist",
 }) {
   const titleLower = rawTitle.toLowerCase();
-  const descLower = rawDescription.toLowerCase();
 
   let healedTitle = rawTitle
     .replace(/HOT SALE!*|202[0-9]|NEWEST|CHEAP|FREE SHIPPING/gi, "")
@@ -117,8 +121,8 @@ Crafted for modern performance and effortless style, the **${healedTitle}** comb
   const seoDescription = `Shop the new ${healedTitle}. Crafted with premium sustainable materials for superior comfort and durability. Free shipping and easy returns.`;
 
   const scoreRawObj = calculateCatalogQualityScore({
-    title: rawTitle,
-    description: rawDescription,
+    rawTitle: rawTitle,
+    rawDescription: rawDescription,
     vendor: rawVendor,
     metafieldsCount: 0,
   });
