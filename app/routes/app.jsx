@@ -24,6 +24,7 @@ export default function App() {
         <s-link href="/app/pulse-ai">PulseAI Trends</s-link>
         <s-link href="/app/global-reach">GlobalReach AI</s-link>
         <s-link href="/app/adspend-guardian">AdSpend Guardian AI</s-link>
+        <s-link href="/app/inventory-oracle">InventoryOracle AI</s-link>
         <s-link href="/app/additional">Additional page</s-link>
       </s-app-nav>
       <Outlet />

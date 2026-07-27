@@ -239,6 +239,36 @@ model AdPolicyConfig {
   updatedAt            DateTime @updatedAt
 }
 
+model InventoryForecastProfile {
+  id                     String   @id @default(uuid())
+  shop                   String
+  productId              String
+  productTitle           String
+  currentStock           Int      // e.g. 12 or 450
+  dailySalesVelocity     Float    // e.g. 4.5
+  supplierLeadTimeDays   Int      // e.g. 14
+  predictedStockoutDays  Int      // e.g. 3
+  reorderPointUnits      Int      // e.g. 65
+  recommendedPoUnits     Int      // e.g. 270
+  stockStatus            String   @default("HEALTHY_BUFFER") // CRITICAL_STOCKOUT_IMMINENT, HEALTHY_BUFFER, OVERSTOCKED_DEAD_CAPITAL, REORDER_PLACED
+  aiActionRecommendation String   // EMERGENCY_PO_DISPATCH, MAINTAIN_CURRENT_STOCK, INITIATE_CLEARANCE_BUNDLE, AWAITING_SUPPLIER
+  poStatus               String   @default("DRAFT_AI") // DRAFT_AI, APPROVED_DISPATCHED, DELIVERED, NONE
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model InventoryPolicyConfig {
+  id                            String   @id @default(uuid())
+  shop                          String   @unique
+  bufferStockDays               Int      @default(14)
+  autoDraftPurchaseOrders       Boolean  @default(true)
+  enableDeadStockBundling       Boolean  @default(true)
+  leadTimeSafetyMarginPercent   Int      @default(20)
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+}
+
+
 
 
 
