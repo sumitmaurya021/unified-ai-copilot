@@ -198,61 +198,69 @@ export default function MarginGuardRoute() {
         ⚡ SKU Portfolio Profitability & Repricing Queue
       </h2>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {profiles.map((p) => {
-          let isUnprofitable = p.netMarginPercent < 0;
+      {profiles.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-surface)", borderRadius: "12px", border: "1px dashed var(--border-light)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
+          <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)", marginBottom: "6px" }}>No SKU Profiles Available</div>
+          <div style={{ fontSize: "13px" }}>Synchronize your Shopify catalog to start real-time unit economics monitoring and autonomous repricing.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {profiles.map((p) => {
+            let isUnprofitable = p.netMarginPercent < 0;
 
-          return (
-            <div key={p.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-                <div>
-                  <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>📦 {p.productTitle}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>SKU ID: {p.productId.split("/").pop()}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span className={`saas-badge ${isUnprofitable ? "badge-danger" : "badge-success"}`}>
-                    Net Margin: {p.netMarginPercent}% (${p.netMarginDollar})
-                  </span>
-                  <span className="saas-badge badge-brand">
-                    Status: {p.aiRepricingStatus}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CURRENT UNIT ECONOMICS</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.6" }}>
-                    • Retail Price: <strong>${p.price}</strong><br />
-                    • Unit COGS: ${p.cogs} | Ad CAC: ${p.currentCac}<br />
-                    • Net Contribution: <strong style={{ color: isUnprofitable ? "var(--danger-main)" : "var(--success-main)" }}>${p.netMarginDollar} ({p.netMarginPercent}%)</strong>
+            return (
+              <div key={p.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                  <div>
+                    <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>📦 {p.productTitle}</span>
+                    <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>SKU ID: {p.productId.split("/").pop()}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className={`saas-badge ${isUnprofitable ? "badge-danger" : "badge-success"}`}>
+                      Net Margin: {p.netMarginPercent}% (${p.netMarginDollar})
+                    </span>
+                    <span className="saas-badge badge-brand">
+                      Status: {p.aiRepricingStatus}
+                    </span>
                   </div>
                 </div>
 
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AI REPRICING SUGGESTION</div>
-                  <div style={{ fontSize: "14px", fontWeight: "800", color: "var(--brand-primary)", marginBottom: "4px" }}>
-                    New Price: ${p.aiRecommendedPrice}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CURRENT UNIT ECONOMICS</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.6" }}>
+                      • Retail Price: <strong>${p.price}</strong><br />
+                      • Unit COGS: ${p.cogs} | Ad CAC: ${p.currentCac}<br />
+                      • Net Contribution: <strong style={{ color: isUnprofitable ? "var(--danger-main)" : "var(--success-main)" }}>${p.netMarginDollar} ({p.netMarginPercent}%)</strong>
+                    </div>
                   </div>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
-                    {p.aiRepricingRationale}
+
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AI REPRICING SUGGESTION</div>
+                    <div style={{ fontSize: "14px", fontWeight: "800", color: "var(--brand-primary)", marginBottom: "4px" }}>
+                      New Price: ${p.aiRecommendedPrice}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                      {p.aiRepricingRationale}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  onClick={() => handleReprice(p.id, p.aiRecommendedPrice)}
-                  disabled={fetcher.state !== "idle"}
-                  className="saas-btn btn-primary"
-                >
-                  🚀 Apply AI Price (${p.aiRecommendedPrice})
-                </button>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    onClick={() => handleReprice(p.id, p.aiRecommendedPrice)}
+                    disabled={fetcher.state !== "idle"}
+                    className="saas-btn btn-primary"
+                  >
+                    🚀 Apply AI Price (${p.aiRecommendedPrice})
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

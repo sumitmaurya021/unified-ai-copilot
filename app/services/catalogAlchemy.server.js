@@ -38,52 +38,6 @@ export async function seedInitialCatalogItems(prisma, shop, admin = null) {
     }
   }
 
-  // Fallback to demo items if the store has no products
-  if (itemsToSeed.length === 0) {
-    itemsToSeed = [
-      {
-        shop,
-        productId: "gid://shopify/Product/2001",
-        rawTitle: "HOT SALE!! 2024 Newest Men Womens Running Shoes Breathable Mesh Sport Sneakers Size 36-45 CHEAP",
-        rawDescription: "good quality running shoes mesh breathable comfortable sport shoes for men women outdoor gym running cheap price factory direct sale size 36 37 38 39 40 41 42 43 44 45 buy now fast shipping!",
-        rawVendor: "AliExpress Dropship",
-        status: "NEEDS_HEALING",
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/2002",
-        rawTitle: "WOMENS ELEGANTS VELVET EVENING GOWN DRESS MIDNIGHT BLUE FORMAL LONG DRESSES 2024",
-        rawDescription: "velvet dress formal gown long dress elegant style dry clean only made in china polyester and velvet good for party wedding.",
-        rawVendor: "Wholesale Fashion Hub",
-        status: "HEALED_READY_FOR_REVIEW",
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/2003",
-        rawTitle: "TITANIUM MAGNETIC WATCH STRAP BAND FOR APLE WATCH SERIES 9 8 7 6 SE ULTRA 49MM 45MM 44MM 42MM 41MM",
-        rawDescription: "magnetic strap titanium metal band watch replacement accessories durable luxury.",
-        rawVendor: "Shenzhen Electronics Direct",
-        status: "AUTO_PUBLISHED",
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/2004",
-        rawTitle: "HYDRAGLOW VITAMIN C SERUM 30ML FACE LIQUID ANTI AGING WRINKLE MOISTURIZING SKIN CARE CHEAP",
-        rawDescription: "vitamin c serum face whitening moisture hyaluronic acid liquid skin repair.",
-        rawVendor: "Cosmetics Wholesale direct",
-        status: "NEEDS_HEALING",
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/2005",
-        rawTitle: "HEAVYWEIGHT FLEECE HOODIE SWEATER MEN WOMEN WINTER WARM PULLOVER STREETWEAR 100% COTTON",
-        rawDescription: "hoodie heavyweight fleece thick winter sweater pullover pocket long sleeve cotton comfortable.",
-        rawVendor: "Apparel Factory Outlet",
-        status: "HEALED_READY_FOR_REVIEW",
-      }
-    ];
-  }
-
   for (const item of itemsToSeed) {
     // Try Groq Llama 3 AI healing first
     let healed = await healCatalogItemWithGroq({

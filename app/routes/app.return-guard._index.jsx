@@ -196,64 +196,72 @@ export default function ReturnGuardRoute() {
         ⚡ Live RMA Requests Queue
       </h2>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {returnRequests.map((req) => {
-          let isHighRisk = req.fraudRiskScore >= 60;
+      {returnRequests.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-surface)", borderRadius: "12px", border: "1px dashed var(--border-light)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
+          <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)", marginBottom: "6px" }}>No Return Requests Available</div>
+          <div style={{ fontSize: "13px" }}>All returns and RMA requests from your Shopify store will appear here for autonomous AI inspection and deflection.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {returnRequests.map((req) => {
+            let isHighRisk = req.fraudRiskScore >= 60;
 
-          return (
-            <div key={req.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-                <div>
-                  <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>RMA {req.rmaId}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Customer: {req.customerEmail}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span className={`saas-badge ${isHighRisk ? "badge-danger" : "badge-success"}`}>
-                    Fraud Risk: {req.fraudRiskScore}%
-                  </span>
-                  <span className="saas-badge badge-brand">
-                    Status: {req.resolutionStatus}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CUSTOMER RETURN REASON</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>"{req.customerReturnReason}"</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-subtle)", marginTop: "6px" }}>Item Value: <strong>${req.itemPriceUsd}</strong> (COGS: ${req.cogsUsd})</div>
-                </div>
-
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>VISION LLM & UNIT ECONOMICS ACTION</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>
-                    • Offer: <strong>{req.recommendedOffer}</strong><br />
-                    • Projected Profit Saved: <strong style={{ color: "var(--success-main)" }}>+${req.profitSavedUsd}</strong>
+            return (
+              <div key={req.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                  <div>
+                    <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>RMA {req.rmaId}</span>
+                    <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Customer: {req.customerEmail}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className={`saas-badge ${isHighRisk ? "badge-danger" : "badge-success"}`}>
+                      Fraud Risk: {req.fraudRiskScore}%
+                    </span>
+                    <span className="saas-badge badge-brand">
+                      Status: {req.resolutionStatus}
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  onClick={() => handleResolve(req.id, "REJECT")}
-                  disabled={fetcher.state !== "idle"}
-                  className="saas-btn btn-danger"
-                >
-                  🚫 Reject (Flag Fraud)
-                </button>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CUSTOMER RETURN REASON</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>"{req.customerReturnReason}"</div>
+                    <div style={{ fontSize: "11px", color: "var(--text-subtle)", marginTop: "6px" }}>Item Value: <strong>${req.itemPriceUsd}</strong> (COGS: ${req.cogsUsd})</div>
+                  </div>
 
-                <button
-                  onClick={() => handleResolve(req.id, "DEFLECT")}
-                  disabled={fetcher.state !== "idle"}
-                  className="saas-btn btn-primary"
-                >
-                  🎁 Issue 40% Keep-It Discount
-                </button>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>VISION LLM & UNIT ECONOMICS ACTION</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                      • Offer: <strong>{req.recommendedOffer}</strong><br />
+                      • Projected Profit Saved: <strong style={{ color: "var(--success-main)" }}>+${req.profitSavedUsd}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    onClick={() => handleResolve(req.id, "REJECT")}
+                    disabled={fetcher.state !== "idle"}
+                    className="saas-btn btn-danger"
+                  >
+                    🚫 Reject (Flag Fraud)
+                  </button>
+
+                  <button
+                    onClick={() => handleResolve(req.id, "DEFLECT")}
+                    disabled={fetcher.state !== "idle"}
+                    className="saas-btn btn-primary"
+                  >
+                    🎁 Issue 40% Keep-It Discount
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

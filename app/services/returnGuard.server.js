@@ -6,7 +6,7 @@
 import { calculateUnitEconomics, analyzeReturnPhoto, generateDeflectionOffer } from "./returnGuard";
 import { evaluateReturnRiskWithGroq, fetchRealStoreOrders } from "./groqAi.server";
 
-export { calculateUnitEconomics, analyzeReturnPhoto, generateDeflectionOffer };
+export { calculateUnitEconomics, analyzeReturnPhoto, generateDeflectionOffer, processAIResolution as executeReturnAction };
 
 /**
  * Seeds initial return requests from REAL Shopify store orders.
@@ -41,51 +41,6 @@ export async function seedInitialReturnRequests(prisma, shop, admin = null) {
         });
       }
     }
-  }
-
-  // Fallback if no real orders exist in store
-  if (itemsToSeed.length === 0) {
-    itemsToSeed = [
-      {
-        shop,
-        orderId: "#1042",
-        orderName: "Order #1042",
-        customerEmail: "sarah.jenkins@example.com",
-        itemTitle: "Neon Crimson Runner Sneaker",
-        itemPrice: 140.0,
-        cogs: 35.0,
-        returnShippingFee: 18.0,
-        returnReason: "Defective sole stitching",
-        photoUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80",
-        status: "VERIFIED_DEFECT",
-      },
-      {
-        shop,
-        orderId: "#1039",
-        orderName: "Order #1039",
-        customerEmail: "alex.miller@example.com",
-        itemTitle: "Velvet Evening Gown - Midnight Blue",
-        itemPrice: 280.0,
-        cogs: 60.0,
-        returnShippingFee: 22.0,
-        returnReason: "Size too small / Fit issue",
-        photoUrl: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=400&q=80",
-        status: "WARDROBING_SUSPECTED",
-      },
-      {
-        shop,
-        orderId: "#1038",
-        orderName: "Order #1038",
-        customerEmail: "david.c@example.com",
-        itemTitle: "Heavyweight Fleece Hoodie",
-        itemPrice: 85.0,
-        cogs: 20.0,
-        returnShippingFee: 16.0,
-        returnReason: "Changed mind",
-        photoUrl: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400&q=80",
-        status: "NORMAL_WEAR",
-      }
-    ];
   }
 
   for (const req of itemsToSeed) {

@@ -40,39 +40,6 @@ export async function seedInitialSupportTickets(prisma, shop, admin = null) {
     }
   }
 
-  // Fallback if no real orders exist in store
-  if (itemsToSeed.length === 0) {
-    itemsToSeed = [
-      {
-        shop,
-        ticketId: "TKT-8801",
-        customerEmail: "sarah.jenkins@example.com",
-        orderId: "#1042",
-        customerQuery: "Where is my order? Can you give me the tracking link or tell me when it will arrive?",
-        statusOverride: "RESOLVED_AUTONOMOUSLY",
-        custName: "Sarah",
-      },
-      {
-        shop,
-        ticketId: "TKT-8802",
-        customerEmail: "alex.miller@example.com",
-        orderId: "#1039",
-        customerQuery: "Hi, the dress size is a bit too small. How do I start an exchange or return for a larger size?",
-        statusOverride: "RESOLVED_AUTONOMOUSLY",
-        custName: "Alex",
-      },
-      {
-        shop,
-        ticketId: "TKT-8803",
-        customerEmail: "david.c@example.com",
-        orderId: "#1038",
-        customerQuery: "I am furious!! My hoodie arrived with a broken zipper and looks damaged! This is terrible quality, I want a refund right now or I am calling my lawyer!",
-        statusOverride: "ESCALATED_TO_HUMAN",
-        custName: "David",
-      }
-    ];
-  }
-
   for (const t of itemsToSeed) {
     let aiSupport = await analyzeSupportWithGroq({
       customerName: t.custName || "Customer",

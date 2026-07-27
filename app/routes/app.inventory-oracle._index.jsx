@@ -192,63 +192,69 @@ export default function InventoryOracleRoute() {
       <h2 style={{ fontSize: "18px", fontWeight: "800", color: "var(--text-main)", marginBottom: "16px" }}>
         ⚡ Live Supply Chain & Purchase Order (PO) Queue
       </h2>
+      {items.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-surface)", borderRadius: "12px", border: "1px dashed var(--border-light)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
+          <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)", marginBottom: "6px" }}>No Inventory Forecasts Available</div>
+          <div style={{ fontSize: "13px" }}>Synchronize store sales velocity and inventory stock levels to predict stockouts and automate Purchase Order dispatching.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {items.map((i) => {
+            let isCritical = i.stockStatus === "CRITICAL_STOCKOUT_IMMINENT";
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {items.map((i) => {
-          let isCritical = i.stockStatus === "CRITICAL_STOCKOUT_IMMINENT";
-
-          return (
-            <div key={i.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-                <div>
-                  <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>📦 {i.productTitle}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Stock: <strong>{i.currentStock} units</strong></span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span className={`saas-badge ${isCritical ? "badge-danger" : "badge-success"}`}>
-                    Stockout: {i.predictedStockoutDays} Days
-                  </span>
-                  <span className="saas-badge badge-brand">
-                    Status: {i.stockStatus}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>VELOCITY & LEAD TIME</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.6" }}>
-                    • Sales Velocity: {i.dailySalesVelocity} units/day<br />
-                    • Lead Time: {i.supplierLeadTimeDays} days<br />
-                    • Reorder Threshold: {i.reorderPointUnits} units
+            return (
+              <div key={i.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                  <div>
+                    <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>📦 {i.productTitle}</span>
+                    <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Stock: <strong>{i.currentStock} units</strong></span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className={`saas-badge ${isCritical ? "badge-danger" : "badge-success"}`}>
+                      Stockout: {i.predictedStockoutDays} Days
+                    </span>
+                    <span className="saas-badge badge-brand">
+                      Status: {i.stockStatus}
+                    </span>
                   </div>
                 </div>
 
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>RECOMMENDED DRAFT PURCHASE ORDER</div>
-                  <div style={{ fontSize: "13px", fontWeight: "800", color: "var(--text-main)", marginBottom: "4px" }}>
-                    Order {i.recommendedPoUnits} Units (${i.recommendedPoUnits * 35})
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>VELOCITY & LEAD TIME</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.6" }}>
+                      • Sales Velocity: {i.dailySalesVelocity} units/day<br />
+                      • Lead Time: {i.supplierLeadTimeDays} days<br />
+                      • Reorder Threshold: {i.reorderPointUnits} units
+                    </div>
                   </div>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
-                    PO Status: {i.poStatus}
+
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>RECOMMENDED DRAFT PURCHASE ORDER</div>
+                    <div style={{ fontSize: "13px", fontWeight: "800", color: "var(--text-main)", marginBottom: "4px" }}>
+                      Order {i.recommendedPoUnits} Units (${i.recommendedPoUnits * 35})
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                      PO Status: {i.poStatus}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  onClick={() => handleResolve(i.id, "DISPATCH_PO")}
-                  disabled={fetcher.state !== "idle" || i.poStatus === "APPROVED_DISPATCHED"}
-                  className="saas-btn btn-primary"
-                >
-                  {i.poStatus === "APPROVED_DISPATCHED" ? "✓ PO Dispatched to Supplier" : "🚀 Approve & Dispatch PO to Supplier"}
-                </button>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    onClick={() => handleResolve(i.id, "DISPATCH_PO")}
+                    disabled={fetcher.state !== "idle" || i.poStatus === "APPROVED_DISPATCHED"}
+                    className="saas-btn btn-primary"
+                  >
+                    {i.poStatus === "APPROVED_DISPATCHED" ? "✓ PO Dispatched to Supplier" : "🚀 Approve & Dispatch PO to Supplier"}
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

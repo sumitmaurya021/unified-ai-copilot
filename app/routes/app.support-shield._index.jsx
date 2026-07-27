@@ -184,61 +184,69 @@ export default function SupportShieldRoute() {
         ⚡ Live Customer Support Tickets Queue
       </h2>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {tickets.map((t) => {
-          let isResolved = t.resolutionStatus === "RESOLVED_AUTONOMOUSLY";
-          let isEscalated = t.resolutionStatus === "ESCALATED_TO_HUMAN";
+      {tickets.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-surface)", borderRadius: "12px", border: "1px dashed var(--border-light)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
+          <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)", marginBottom: "6px" }}>No Support Tickets Available</div>
+          <div style={{ fontSize: "13px" }}>Inbound customer inquiries and WISMO tickets will automatically appear here for autonomous AI sentiment triage and response drafting.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {tickets.map((t) => {
+            let isResolved = t.resolutionStatus === "RESOLVED_AUTONOMOUSLY";
+            let isEscalated = t.resolutionStatus === "ESCALATED_TO_HUMAN";
 
-          return (
-            <div key={t.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px" }}>
-                <div>
-                  <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>👤 {t.customerEmail}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Order #{t.orderId} • Intent: {t.queryCategory}</span>
+            return (
+              <div key={t.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px" }}>
+                  <div>
+                    <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>👤 {t.customerEmail}</span>
+                    <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Order #{t.orderId} • Intent: {t.queryCategory}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className={`saas-badge ${t.aiSentimentScore < 0 ? "badge-danger" : "badge-success"}`}>
+                      Sentiment: {t.aiSentimentScore}
+                    </span>
+                    <span className={`saas-badge ${isResolved ? "badge-success" : isEscalated ? "badge-danger" : "badge-warning"}`}>
+                      {t.resolutionStatus}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span className={`saas-badge ${t.aiSentimentScore < 0 ? "badge-danger" : "badge-success"}`}>
-                    Sentiment: {t.aiSentimentScore}
-                  </span>
-                  <span className={`saas-badge ${isResolved ? "badge-success" : isEscalated ? "badge-danger" : "badge-warning"}`}>
-                    {t.resolutionStatus}
-                  </span>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "16px" }}>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CUSTOMER INQUIRY</div>
+                    <div style={{ fontSize: "13px", color: "var(--text-main)", lineHeight: "1.4" }}>"{t.customerQuery}"</div>
+                  </div>
+
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>🤖 AI DRAFTED RESPONSE ({t.aiConfidenceScore}% Confidence)</div>
+                    <div style={{ fontSize: "13px", color: "var(--text-main)", lineHeight: "1.4" }}>{t.aiDraftedResponse}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    onClick={() => handleResolve(t.id, "ESCALATE")}
+                    disabled={fetcher.state !== "idle" || isEscalated}
+                    className="saas-btn btn-danger"
+                  >
+                    ⚠️ Escalate to Human Support
+                  </button>
+
+                  <button
+                    onClick={() => handleResolve(t.id, "APPROVE_SEND")}
+                    disabled={fetcher.state !== "idle" || isResolved}
+                    className="saas-btn btn-primary"
+                  >
+                    {isResolved ? "✓ Auto-Resolved & Sent" : "🚀 Approve & Send Response"}
+                  </button>
                 </div>
               </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "16px" }}>
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CUSTOMER INQUIRY</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>"{t.customerQuery}"</div>
-                </div>
-
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AI SUGGESTED RESPONSE</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>"{t.aiResponse}"</div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  onClick={() => handleResolve(t.id, "ESCALATE")}
-                  disabled={fetcher.state !== "idle" || isEscalated}
-                  className="saas-btn btn-danger"
-                >
-                  🚨 Escalate to Human
-                </button>
-
-                <button
-                  onClick={() => handleResolve(t.id, "APPROVE_SEND")}
-                  disabled={fetcher.state !== "idle" || isResolved}
-                  className="saas-btn btn-primary"
-                >
-                  {isResolved ? "✓ Auto-Resolved & Sent" : "🚀 Approve & Send Response"}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

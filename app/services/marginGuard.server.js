@@ -6,7 +6,7 @@
 import { calculateSkuMargin, analyzePriceElasticity } from "./marginGuard";
 import { recommendRepricingWithGroq, fetchRealStoreProducts } from "./groqAi.server";
 
-export { calculateSkuMargin, analyzePriceElasticity };
+export { calculateSkuMargin, analyzePriceElasticity, executeAiRepricing as executeRepriceAction };
 
 /**
  * Seeds initial margin profiles from REAL Shopify store products.
@@ -42,48 +42,6 @@ export async function seedInitialMarginProfiles(prisma, shop, admin = null) {
         });
       }
     }
-  }
-
-  // Fallback if no real products exist in store
-  if (itemsToSeed.length === 0) {
-    itemsToSeed = [
-      {
-        shop,
-        productId: "gid://shopify/Product/1001",
-        productTitle: "AeroBoost Running Sneaker - Volts",
-        sku: "SNK-AERO-01",
-        price: 149.99,
-        cogs: 42.00,
-        averageShippingCost: 14.50,
-        currentCac: 68.00,
-        inventoryLevel: 120,
-        restockLeadTimeDays: 10,
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/1002",
-        productTitle: "Organic Cashmere Sweater - Oatmeal",
-        sku: "SWT-CASH-04",
-        price: 220.00,
-        cogs: 55.00,
-        averageShippingCost: 12.00,
-        currentCac: 45.00,
-        inventoryLevel: 8,
-        restockLeadTimeDays: 28,
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/1003",
-        productTitle: "ProFit Bluetooth Smart Scale",
-        sku: "SCL-PRO-09",
-        price: 69.99,
-        cogs: 22.00,
-        averageShippingCost: 16.00,
-        currentCac: 34.00,
-        inventoryLevel: 45,
-        restockLeadTimeDays: 14,
-      }
-    ];
   }
 
   for (const item of itemsToSeed) {

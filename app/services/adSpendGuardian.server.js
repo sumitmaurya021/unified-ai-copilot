@@ -47,51 +47,6 @@ export async function seedInitialAdCampaigns(prisma, shop, admin = null) {
     }
   }
 
-  // Fallback if no real products exist in store
-  if (itemsToSeed.length === 0) {
-    itemsToSeed = [
-      {
-        shop,
-        campaignId: "camp_meta_101",
-        campaignName: "META_Conv_Hoodie_Retargeting",
-        platform: "META_ADS",
-        mappedProductId: "gid://shopify/Product/2005",
-        mappedProductTitle: "Heavyweight Organic Cotton Fleece Hoodie",
-        dailyBudgetUsd: 250.0,
-        platformRoas: 2.60,
-        cogsPercent: 35.0,
-        returnRatePercent: 18.0,
-        statusOverride: "ACTIVE_RUNNING",
-      },
-      {
-        shop,
-        campaignId: "camp_goog_202",
-        campaignName: "GOOGLE_PMax_Sneakers_USA",
-        platform: "GOOGLE_PMAX",
-        mappedProductId: "gid://shopify/Product/2001",
-        mappedProductTitle: "AeroMesh Lightweight Performance Running Sneaker",
-        dailyBudgetUsd: 350.0,
-        platformRoas: 1.80,
-        cogsPercent: 45.0,
-        returnRatePercent: 24.0,
-        statusOverride: "PAUSED_AUTONOMOUSLY",
-      },
-      {
-        shop,
-        campaignId: "camp_tiktok_303",
-        campaignName: "TIKTOK_Spark_Serum_GenZ",
-        platform: "TIKTOK_ADS",
-        mappedProductId: "gid://shopify/Product/2004",
-        mappedProductTitle: "HydraGlow Advanced Vitamin C Radiance Serum",
-        dailyBudgetUsd: 150.0,
-        platformRoas: 3.80,
-        cogsPercent: 20.0,
-        returnRatePercent: 4.0,
-        statusOverride: "SCALED_AUTONOMOUSLY",
-      }
-    ];
-  }
-
   for (const item of itemsToSeed) {
     let aiAudit = await auditAdSpendWithGroq({
       campaignName: item.campaignName,

@@ -42,39 +42,6 @@ export async function seedInitialLocalizationProfiles(prisma, shop, admin = null
     }
   }
 
-  // Fallback if no real products exist in store
-  if (itemsToSeed.length === 0) {
-    itemsToSeed = [
-      {
-        shop,
-        productId: "gid://shopify/Product/2005",
-        originalTitle: "Heavyweight Organic Cotton Fleece Hoodie",
-        originalPrice: 110.0,
-        targetMarket: "GERMANY_EU",
-        originalDescription: "Heavyweight fleece hoodie sweater winter warm pullover streetwear.",
-        statusOverride: "REVIEWED_APPROVED",
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/2004",
-        originalTitle: "HydraGlow Advanced Vitamin C Radiance Serum",
-        originalPrice: 85.0,
-        targetMarket: "JAPAN_APAC",
-        originalDescription: "Vitamin C serum face whitening moisture hyaluronic acid liquid.",
-        statusOverride: "PUBLISHED_STOREFRONT",
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/2002",
-        originalTitle: "Silk Velvet Evening Gown — Midnight Edition",
-        originalPrice: 320.0,
-        targetMarket: "FRANCE_EU",
-        originalDescription: "Velvet dress formal gown long dress elegant style.",
-        statusOverride: "PUBLISHED_STOREFRONT",
-      }
-    ];
-  }
-
   for (const item of itemsToSeed) {
     let aiTrans = await translateListingWithGroq({
       originalTitle: item.originalTitle,

@@ -97,3 +97,5 @@ export function inspectReturnPhotos({ returnReason, photoUrls = [] }) {
     hasPhotosUploaded: photoUrls.length > 0,
   };
 }
+
+export { inspectReturnPhotos as analyzeReturnPhoto, evaluateReturnUnitEconomics as generateDeflectionOffer };

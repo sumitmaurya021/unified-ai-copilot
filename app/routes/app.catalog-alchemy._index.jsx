@@ -225,70 +225,73 @@ export default function CatalogAlchemyRoute() {
         ⚡ Catalog Listings Healing Queue
       </h2>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {items.map((item) => {
-          let isPublished = item.aiHealingStatus === "AUTO_PUBLISHED";
+      {items.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-surface)", borderRadius: "12px", border: "1px dashed var(--border-light)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
+          <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)", marginBottom: "6px" }}>No Catalog Items Found</div>
+          <div style={{ fontSize: "13px" }}>Synchronize your Shopify store products to start AI SEO title healing and automated storefront publishing.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {items.map((item) => {
+            let isPublished = item.aiHealingStatus === "AUTO_PUBLISHED";
 
-          return (
-            <div key={item.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-                <div>
-                  <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>✨ {item.healedTitle}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Vendor: {item.vendor}</span>
+            return (
+              <div key={item.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                  <div>
+                    <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>✨ {item.healedTitle}</span>
+                    <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Vendor: {item.vendor}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className="saas-badge badge-danger">
+                      Raw: {item.aiQualityScoreRaw}/100
+                    </span>
+                    <span className="saas-badge badge-success">
+                      Healed: {item.aiQualityScoreHealed}/100
+                    </span>
+                    <span className={`saas-badge ${isPublished ? "badge-success" : "badge-brand"}`}>
+                      {item.aiHealingStatus}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span className="saas-badge badge-danger">
-                    Raw: {item.aiQualityScoreRaw}/100
-                  </span>
-                  <span className="saas-badge badge-success">
-                    Healed: {item.aiQualityScoreHealed}/100
-                  </span>
-                  <span className={`saas-badge ${isPublished ? "badge-success" : "badge-brand"}`}>
-                    {item.aiHealingStatus}
-                  </span>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--danger-main)", marginBottom: "4px" }}>🚫 RAW SUPPLIER LISTING</div>
+                    <div style={{ fontSize: "13px", fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>{item.rawTitle}</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>{item.rawDescription}</div>
+                  </div>
+
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--success-main)", marginBottom: "4px" }}>✨ AI HEALED STOREFRONT LISTING</div>
+                    <div style={{ fontSize: "14px", fontWeight: "800", color: "var(--brand-primary)", marginBottom: "4px" }}>{item.healedTitle}</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>{item.healedDescription}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    onClick={() => handleHeal(item.id)}
+                    disabled={fetcher.state !== "idle"}
+                    className="saas-btn btn-secondary"
+                  >
+                    ⚡ Re-Heal with AI
+                  </button>
+
+                  <button
+                    onClick={() => handlePublish(item.id)}
+                    disabled={fetcher.state !== "idle" || isPublished}
+                    className="saas-btn btn-primary"
+                  >
+                    {isPublished ? "✓ Published to Shopify" : "🚀 Heal & Publish to Storefront"}
+                  </button>
                 </div>
               </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>RAW SUPPLIER LISTING (BEFORE)</div>
-                  <div style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>{item.originalTitle}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>{item.originalDescription}</div>
-                </div>
-
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AI HEALED LISTING & METAFIELDS (AFTER)</div>
-                  <div style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>{item.healedTitle}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4", marginBottom: "6px" }}>{item.healedDescription}</div>
-                  {item.extractedMetafieldsJson && (
-                    <div style={{ fontSize: "10px", color: "var(--brand-primary)", fontWeight: "700" }}>
-                      Metafields: {item.extractedMetafieldsJson}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  onClick={() => handleHeal(item.id)}
-                  disabled={fetcher.state !== "idle"}
-                  className="saas-btn btn-secondary"
-                >
-                  ⚡ Re-Heal with AI
-                </button>
-
-                <button
-                  onClick={() => handlePublish(item.id)}
-                  disabled={fetcher.state !== "idle" || isPublished}
-                  className="saas-btn btn-primary"
-                >
-                  {isPublished ? "✓ Published to Shopify" : "🚀 Heal & Publish to Storefront"}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

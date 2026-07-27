@@ -179,63 +179,71 @@ export default function PulseAiRoute() {
         ⚡ Live Viral Social Opportunities Queue
       </h2>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {opps.map((o) => {
-          let isLaunched = o.campaignStatus === "CAMPAIGN_LAUNCHED";
+      {opps.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-surface)", borderRadius: "12px", border: "1px dashed var(--border-light)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
+          <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)", marginBottom: "6px" }}>No Viral Opportunities Discovered</div>
+          <div style={{ fontSize: "13px" }}>Synchronize your Shopify products to allow PulseAI to scan TikTok and Instagram for matching viral trends and hook generation.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {opps.map((o) => {
+            let isLaunched = o.campaignStatus === "CAMPAIGN_LAUNCHED";
 
-          return (
-            <div key={o.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-                <div>
-                  <span style={{ fontSize: "18px", fontWeight: "800", color: "var(--danger-main)" }}>🔥 {o.trendName}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Matched Product: {o.mappedProductTitle}</span>
+            return (
+              <div key={o.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                  <div>
+                    <span style={{ fontSize: "18px", fontWeight: "800", color: "var(--danger-main)" }}>🔥 {o.trendName}</span>
+                    <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Matched Product: {o.mappedProductTitle}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className="saas-badge badge-danger">
+                      Velocity: {o.viralVelocityScore}/100
+                    </span>
+                    <span className="saas-badge badge-success">
+                      Fit: {o.viralFitScore}%
+                    </span>
+                    <span className={`saas-badge ${isLaunched ? "badge-success" : "badge-brand"}`}>
+                      {o.campaignStatus}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span className="saas-badge badge-danger">
-                    Velocity: {o.viralVelocityScore}/100
-                  </span>
-                  <span className="saas-badge badge-success">
-                    Fit: {o.viralFitScore}%
-                  </span>
-                  <span className={`saas-badge ${isLaunched ? "badge-success" : "badge-brand"}`}>
-                    {o.campaignStatus}
-                  </span>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "16px" }}>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--danger-main)", marginBottom: "4px" }}>GENERATED 3-SECOND VIDEO HOOK SCRIPT</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-main)", fontWeight: "700", lineHeight: "1.4" }}>"{o.generatedHookScript}"</div>
+                  </div>
+
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AD CAPTION & HASHTAG MATRIX</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>{o.generatedAdCaption}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    onClick={() => handleAction(o.id, "GENERATE_NEW")}
+                    disabled={fetcher.state !== "idle" || isLaunched}
+                    className="saas-btn btn-secondary"
+                  >
+                    🔄 Regenerate AI Hook
+                  </button>
+
+                  <button
+                    onClick={() => handleAction(o.id, "LAUNCH")}
+                    disabled={fetcher.state !== "idle" || isLaunched}
+                    className="saas-btn btn-primary"
+                  >
+                    {isLaunched ? "✓ Campaign Live on TikTok" : "🚀 Launch FYP Ad Campaign"}
+                  </button>
                 </div>
               </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginBottom: "16px" }}>
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--danger-main)", marginBottom: "4px" }}>GENERATED 3-SECOND VIDEO HOOK SCRIPT</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-main)", fontWeight: "700", lineHeight: "1.4" }}>"{o.generatedHookScript}"</div>
-                </div>
-
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>TIKTOK / REELS FYP AD CAPTION</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>{o.generatedAdCaption}</div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  onClick={() => handleAction(o.id, "ARCHIVE")}
-                  disabled={fetcher.state !== "idle"}
-                  className="saas-btn btn-secondary"
-                >
-                  📁 Archive Opportunity
-                </button>
-
-                <button
-                  onClick={() => handleAction(o.id, "LAUNCH")}
-                  disabled={fetcher.state !== "idle" || isLaunched}
-                  className="saas-btn btn-primary"
-                >
-                  {isLaunched ? "✓ Campaign Live on TikTok" : "🚀 Launch FYP Ad Campaign"}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

@@ -187,57 +187,65 @@ export default function GlobalReachRoute() {
         ⚡ Live Regional Market Adaptation Queue
       </h2>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {profiles.map((p) => {
-          let isPublished = p.publishingStatus === "PUBLISHED_STOREFRONT";
+      {profiles.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-surface)", borderRadius: "12px", border: "1px dashed var(--border-light)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
+          <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)", marginBottom: "6px" }}>No Market Localizations Found</div>
+          <div style={{ fontSize: "13px" }}>Synchronize your store inventory to start translating product listings into regional dialects and currency conversions.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {profiles.map((p) => {
+            let isPublished = p.publishingStatus === "PUBLISHED_STOREFRONT";
 
-          return (
-            <div key={p.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px" }}>
-                <div>
-                  <span style={{ fontSize: "18px", fontWeight: "800", color: "var(--brand-primary)" }}>🌐 Region: {p.targetMarket}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Original SKU: {p.originalTitle} (${p.originalPrice})</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span className="saas-badge badge-success">
-                    Nuance: {p.culturalNuanceScore}/100
-                  </span>
-                  <span className={`saas-badge ${isPublished ? "badge-success" : "badge-brand"}`}>
-                    {p.publishingStatus}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "16px" }}>
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>LOCALIZED STOREFRONT LISTING</div>
-                  <div style={{ fontSize: "13px", fontWeight: "800", color: "var(--text-main)", marginBottom: "4px" }}>{p.localizedTitle}</div>
-                  <div style={{ fontSize: "14px", fontWeight: "800", color: "var(--success-main)", marginBottom: "6px" }}>Price: {p.localizedPriceDisplay}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>{p.localizedDescription}</div>
-                </div>
-
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>UNIT CONVERSION & CULTURAL HOOKS</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>
-                    • Language: <strong>{p.targetLanguage}</strong><br />
-                    • Notes: {p.unitConversionNote}
+            return (
+              <div key={p.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px" }}>
+                  <div>
+                    <span style={{ fontSize: "18px", fontWeight: "800", color: "var(--brand-primary)" }}>🌐 Region: {p.targetMarket}</span>
+                    <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Original SKU: {p.originalTitle} (${p.originalPrice})</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className="saas-badge badge-success">
+                      Nuance: {p.culturalNuanceScore}/100
+                    </span>
+                    <span className={`saas-badge ${isPublished ? "badge-success" : "badge-brand"}`}>
+                      {p.publishingStatus}
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  onClick={() => handleAction(p.id, "PUBLISH")}
-                  disabled={fetcher.state !== "idle" || isPublished}
-                  className="saas-btn btn-primary"
-                >
-                  {isPublished ? "✓ Published to Shopify Markets" : "🚀 Publish Localized Listing"}
-                </button>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "16px" }}>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>LOCALIZED STOREFRONT LISTING</div>
+                    <div style={{ fontSize: "13px", fontWeight: "800", color: "var(--text-main)", marginBottom: "4px" }}>{p.localizedTitle}</div>
+                    <div style={{ fontSize: "14px", fontWeight: "800", color: "var(--success-main)", marginBottom: "6px" }}>Price: {p.localizedPriceDisplay}</div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>{p.localizedDescription}</div>
+                  </div>
+
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>UNIT CONVERSION & CULTURAL HOOKS</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                      • Language: <strong>{p.targetLanguage}</strong><br />
+                      • Notes: {p.unitConversionNote}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    onClick={() => handleAction(p.id, "PUBLISH")}
+                    disabled={fetcher.state !== "idle" || isPublished}
+                    className="saas-btn btn-primary"
+                  >
+                    {isPublished ? "✓ Published to Shopify Markets" : "🚀 Publish Localized Listing"}
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

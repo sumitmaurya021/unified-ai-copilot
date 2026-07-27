@@ -7,20 +7,115 @@ export const loader = async ({ request }) => {
   const { session } = await authenticate.admin(request);
   const shop = session.shop;
 
-  const catalogCount = await prisma.catalogItemProfile.count({ where: { shop } }).catch(() => 5);
-  const marginCount = await prisma.productMarginProfile.count({ where: { shop } }).catch(() => 5);
-  const returnCount = await prisma.returnRequest.count({ where: { shop } }).catch(() => 5);
-  const oracleCount = await prisma.inventoryForecastProfile.count({ where: { shop } }).catch(() => 5);
+  const [
+    catalogItems,
+    marginProfiles,
+    returnRequests,
+    oracleForecasts,
+    supportTickets,
+    socialTrends,
+    localizations,
+    adCampaigns
+  ] = await Promise.all([
+    prisma.catalogItemProfile.findMany({ where: { shop } }).catch(() => []),
+    prisma.productMarginProfile.findMany({ where: { shop } }).catch(() => []),
+    prisma.returnRequest.findMany({ where: { shop } }).catch(() => []),
+    prisma.inventoryForecastProfile.findMany({ where: { shop } }).catch(() => []),
+    prisma.supportTicketProfile.findMany({ where: { shop } }).catch(() => []),
+    prisma.socialTrendOpportunity.findMany({ where: { shop } }).catch(() => []),
+    prisma.productLocalizationProfile.findMany({ where: { shop } }).catch(() => []),
+    prisma.adCampaignAudit.findMany({ where: { shop } }).catch(() => [])
+  ]);
 
-  const totalSkus = catalogCount + marginCount + oracleCount;
+  const totalSkus = catalogItems.length + marginProfiles.length + oracleForecasts.length;
+
+  // Calculate real protected profit
+  const returnSaved = returnRequests
+    .filter(r => r.resolutionStatus === "DEFLECTED" || r.resolutionStatus === "EXCHANGED")
+    .reduce((acc, r) => acc + (parseFloat(r.profitSavedByDeflection) || 0), 0);
+
+  const adSaved = adCampaigns
+    .filter(c => c.auditStatus && c.auditStatus.includes("PAUSED"))
+    .reduce((acc, c) => acc + (parseFloat(c.dailyBudgetUsd) || 0) * 30, 0);
+
+  const marginLift = marginProfiles
+    .filter(m => m.aiRepricingStatus === "OPTIMAL")
+    .reduce((acc, m) => acc + Math.max(0, parseFloat(m.netMarginDollar) || 0), 0);
+
+  const totalNetProfitProtectedUsd = Math.round(returnSaved + adSaved + marginLift);
+
+  // Calculate autonomous resolution rate
+  const totalActions = returnRequests.length + supportTickets.length + adCampaigns.length + marginProfiles.length + catalogItems.length + oracleForecasts.length + socialTrends.length + localizations.length;
+  const autonomousActions = 
+    returnRequests.filter(r => r.resolutionStatus !== "PENDING").length +
+    supportTickets.filter(t => t.resolutionStatus !== "OPEN").length +
+    adCampaigns.filter(a => a.auditStatus !== "MONITORING_ACTIVE").length +
+    marginProfiles.filter(m => m.aiRepricingStatus === "OPTIMAL").length +
+    catalogItems.filter(c => c.aiHealingStatus === "AUTO_PUBLISHED").length +
+    oracleForecasts.filter(f => f.poStatus !== "NONE").length +
+    socialTrends.filter(s => s.status !== "DISCOVERED").length +
+    localizations.filter(l => l.status !== "DRAFT").length;
+
+  const autonomousResolutionRate = totalActions > 0 ? Math.round((autonomousActions / totalActions) * 1000) / 10 : 0;
+
+  // Build real activity feed from latest updatedAt records
+  const allEvents = [];
+  returnRequests.forEach(r => allEvents.push({
+    id: `return-${r.id}`,
+    time: r.updatedAt ? new Date(r.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently",
+    timestamp: r.updatedAt ? new Date(r.updatedAt).getTime() : 0,
+    agent: "ReturnGuard AI",
+    action: `Processed Return #${r.orderNumber || r.id.slice(0,6)} (${r.resolutionStatus})`,
+    tag: r.profitSavedByDeflection ? `SAVED $${parseFloat(r.profitSavedByDeflection).toFixed(2)}` : r.resolutionStatus,
+    tagType: r.resolutionStatus === "DEFLECTED" ? "success" : "info"
+  }));
+  adCampaigns.forEach(c => allEvents.push({
+    id: `ad-${c.id}`,
+    time: c.updatedAt ? new Date(c.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently",
+    timestamp: c.updatedAt ? new Date(c.updatedAt).getTime() : 0,
+    agent: "AdSpend Guardian",
+    action: `Audited ${c.campaignName} (${c.auditStatus})`,
+    tag: c.platformRoas ? `ROAS ${c.platformRoas}x` : c.auditStatus,
+    tagType: c.auditStatus && c.auditStatus.includes("PAUSED") ? "danger" : "info"
+  }));
+  supportTickets.forEach(t => allEvents.push({
+    id: `support-${t.id}`,
+    time: t.updatedAt ? new Date(t.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently",
+    timestamp: t.updatedAt ? new Date(t.updatedAt).getTime() : 0,
+    agent: "SupportShield AI",
+    action: `Triage Ticket #${t.orderNumber || t.id.slice(0,6)}: ${t.customerQuery?.slice(0,40)}...`,
+    tag: t.resolutionStatus,
+    tagType: "success"
+  }));
+  oracleForecasts.forEach(i => allEvents.push({
+    id: `inv-${i.id}`,
+    time: i.updatedAt ? new Date(i.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently",
+    timestamp: i.updatedAt ? new Date(i.updatedAt).getTime() : 0,
+    agent: "InventoryOracle",
+    action: `Forecast SKU ${i.productTitle}: ${i.stockStatus}`,
+    tag: i.poStatus === "NONE" ? "MONITORING" : i.poStatus,
+    tagType: i.stockStatus && i.stockStatus.includes("STOCKOUT") ? "danger" : "info"
+  }));
+  catalogItems.forEach(c => allEvents.push({
+    id: `cat-${c.id}`,
+    time: c.updatedAt ? new Date(c.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently",
+    timestamp: c.updatedAt ? new Date(c.updatedAt).getTime() : 0,
+    agent: "CatalogAlchemy",
+    action: `Healed title for ${c.productTitle || 'SKU'}`,
+    tag: `${c.aiQualityScoreHealed || 100}% SEO`,
+    tagType: "brand"
+  }));
+
+  allEvents.sort((a, b) => b.timestamp - a.timestamp);
+  const liveActivityFeed = allEvents.slice(0, 5);
 
   return {
     shop,
     stats: {
-      totalNetProfitProtectedUsd: 14280,
-      autonomousResolutionRate: 94.2,
-      totalActiveSkusMonitored: totalSkus > 0 ? totalSkus : 15,
-      totalEventsProcessed: 1840,
+      totalNetProfitProtectedUsd,
+      autonomousResolutionRate,
+      totalActiveSkusMonitored: totalSkus,
+      totalEventsProcessed: totalActions,
     },
     modules: [
       {
@@ -28,8 +123,8 @@ export const loader = async ({ request }) => {
         name: "ReturnGuard AI",
         icon: "🛡️",
         path: "/app/return-guard",
-        status: "ACTIVE",
-        metric: "$4,850 Saved",
+        status: returnRequests.length > 0 ? "ACTIVE" : "IDLE",
+        metric: returnRequests.length > 0 ? `$${returnSaved.toFixed(0)} Saved` : "No Returns",
         desc: "Autonomous return fraud audit & keep-it discount deflection engine.",
         color: "#10b981",
       },
@@ -38,8 +133,8 @@ export const loader = async ({ request }) => {
         name: "MarginGuard AI",
         icon: "💰",
         path: "/app/margin-guard",
-        status: "ACTIVE",
-        metric: "+4.2% Margin Lift",
+        status: marginProfiles.length > 0 ? "ACTIVE" : "IDLE",
+        metric: marginProfiles.length > 0 ? `${marginProfiles.length} SKUs Monitored` : "0 SKUs Monitored",
         desc: "Dynamic elasticity repricing & CAC margin contribution sentinel.",
         color: "#6366f1",
       },
@@ -48,8 +143,8 @@ export const loader = async ({ request }) => {
         name: "CatalogAlchemy AI",
         icon: "✨",
         path: "/app/catalog-alchemy",
-        status: "ACTIVE",
-        metric: "100% SEO Score",
+        status: catalogItems.length > 0 ? "ACTIVE" : "IDLE",
+        metric: catalogItems.length > 0 ? `${catalogItems.length} Products Monitored` : "0 Products Monitored",
         desc: "AI product title healing & automated Shopify storefront publishing.",
         color: "#ec4899",
       },
@@ -58,8 +153,8 @@ export const loader = async ({ request }) => {
         name: "SupportShield AI",
         icon: "🎧",
         path: "/app/support-shield",
-        status: "ACTIVE",
-        metric: "98% Deflection",
+        status: supportTickets.length > 0 ? "ACTIVE" : "IDLE",
+        metric: supportTickets.length > 0 ? `${supportTickets.length} Tickets Monitored` : "0 Tickets Monitored",
         desc: "L1 Support ticket resolution & customer sentiment triage.",
         color: "#06b6d4",
       },
@@ -68,8 +163,8 @@ export const loader = async ({ request }) => {
         name: "PulseAI Trends",
         icon: "📱",
         path: "/app/pulse-ai",
-        status: "ACTIVE",
-        metric: "5 Viral Hooks",
+        status: socialTrends.length > 0 ? "ACTIVE" : "IDLE",
+        metric: socialTrends.length > 0 ? `${socialTrends.length} Viral Opportunities` : "0 Trends Tracked",
         desc: "TikTok/IG viral trend mapper & 3-second hook script generator.",
         color: "#8b5cf6",
       },
@@ -78,8 +173,8 @@ export const loader = async ({ request }) => {
         name: "GlobalReach AI",
         icon: "🌍",
         path: "/app/global-reach",
-        status: "ACTIVE",
-        metric: "5 Markets Live",
+        status: localizations.length > 0 ? "ACTIVE" : "IDLE",
+        metric: localizations.length > 0 ? `${localizations.length} Markets Live` : "0 Markets Live",
         desc: "Cross-border storefront localization & Keigo/EU translations.",
         color: "#f59e0b",
       },
@@ -88,8 +183,8 @@ export const loader = async ({ request }) => {
         name: "AdSpend Guardian",
         icon: "📊",
         path: "/app/adspend-guardian",
-        status: "ACTIVE",
-        metric: "$3,240 Saved",
+        status: adCampaigns.length > 0 ? "ACTIVE" : "IDLE",
+        metric: adCampaigns.length > 0 ? `${adCampaigns.length} Campaigns Audited` : "0 Campaigns Audited",
         desc: "True Net ROAS attribution & bleeding ad campaign kill-switch.",
         color: "#ef4444",
       },
@@ -98,19 +193,13 @@ export const loader = async ({ request }) => {
         name: "InventoryOracle",
         icon: "📦",
         path: "/app/inventory-oracle",
-        status: "ACTIVE",
-        metric: "0 Stockouts",
+        status: oracleForecasts.length > 0 ? "ACTIVE" : "IDLE",
+        metric: oracleForecasts.length > 0 ? `${oracleForecasts.length} SKUs Monitored` : "0 SKUs Monitored",
         desc: "Stockout forecasting & autonomous Purchase Order dispatch.",
         color: "#3b82f6",
       },
     ],
-    liveActivityFeed: [
-      { id: 1, time: "2 mins ago", agent: "ReturnGuard AI", action: "Offered 40% Keep-It discount on RMA #1084", tag: "SAVED $34.00", tagType: "success" },
-      { id: 2, time: "14 mins ago", agent: "AdSpend Guardian AI", action: "Autonomously paused GOOGLE_PMax_Sneakers (True ROAS 0.74x)", tag: "PREVENTED -$350 LOSS", tagType: "danger" },
-      { id: 3, time: "32 mins ago", agent: "InventoryOracle AI", action: "Drafted Emergency PO of 270 units for Fleece Hoodie", tag: "STOCKOUT AVERTED", tagType: "info" },
-      { id: 4, time: "1 hour ago", agent: "SupportShield AI", action: "Auto-resolved WISMO ticket for Order #8821 with live tracking link", tag: "98% CONFIDENCE", tagType: "success" },
-      { id: 5, time: "2 hours ago", agent: "GlobalReach AI", action: "Adapted Velvet Evening Gown description into Japanese Keigo (¥12,800)", tag: "LOCALIZED JP", tagType: "brand" },
-    ]
+    liveActivityFeed
   };
 };
 
@@ -244,30 +333,38 @@ export default function MasterExecutiveDashboard() {
             <span>⚡</span> Real-Time Autonomous AI Activity Feed
           </h3>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {liveActivityFeed.map((act) => {
-              let badgeBg = "var(--success-bg)";
-              let badgeColor = "var(--success-main)";
-              if (act.tagType === "danger") { badgeBg = "var(--danger-bg)"; badgeColor = "var(--danger-main)"; }
-              if (act.tagType === "info") { badgeBg = "var(--info-bg)"; badgeColor = "var(--info-main)"; }
-              if (act.tagType === "brand") { badgeBg = "rgba(99, 102, 241, 0.15)"; badgeColor = "var(--brand-primary)"; }
+          {liveActivityFeed.length === 0 ? (
+            <div style={{ padding: "32px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-subtle)", borderRadius: "8px", border: "1px dashed var(--border-light)" }}>
+              <div style={{ fontSize: "28px", marginBottom: "8px" }}>📭</div>
+              <div style={{ fontWeight: "700", color: "var(--text-main)", marginBottom: "4px" }}>No Recent AI Activity Found</div>
+              <div style={{ fontSize: "12px" }}>Synchronize real store data in any copilot module to start autonomous optimizations and view live telemetry!</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {liveActivityFeed.map((act) => {
+                let badgeBg = "var(--success-bg)";
+                let badgeColor = "var(--success-main)";
+                if (act.tagType === "danger") { badgeBg = "var(--danger-bg)"; badgeColor = "var(--danger-main)"; }
+                if (act.tagType === "info") { badgeBg = "var(--info-bg)"; badgeColor = "var(--info-main)"; }
+                if (act.tagType === "brand") { badgeBg = "rgba(99, 102, 241, 0.15)"; badgeColor = "var(--brand-primary)"; }
 
-              return (
-                <div key={act.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderRadius: "8px", background: "var(--bg-subtle)", border: "1px solid var(--border-light)" }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: "800", color: "var(--text-main)" }}>{act.agent}</span>
-                      <span style={{ fontSize: "10px", color: "var(--text-light)" }}>• {act.time}</span>
+                return (
+                  <div key={act.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderRadius: "8px", background: "var(--bg-subtle)", border: "1px solid var(--border-light)" }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                        <span style={{ fontSize: "12px", fontWeight: "800", color: "var(--text-main)" }}>{act.agent}</span>
+                        <span style={{ fontSize: "10px", color: "var(--text-light)" }}>• {act.time}</span>
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{act.action}</div>
                     </div>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{act.action}</div>
+                    <span style={{ fontSize: "10px", fontWeight: "800", backgroundColor: badgeBg, color: badgeColor, padding: "3px 8px", borderRadius: "12px", whiteSpace: "nowrap" }}>
+                      {act.tag}
+                    </span>
                   </div>
-                  <span style={{ fontSize: "10px", fontWeight: "800", backgroundColor: badgeBg, color: badgeColor, padding: "3px 8px", borderRadius: "12px", whiteSpace: "nowrap" }}>
-                    {act.tag}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Interactive Store ROI Uplift Calculator */}

@@ -218,73 +218,81 @@ export default function AdSpendGuardianRoute() {
         ⚡ Live Multi-Channel Ad Attribution Queue
       </h2>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {campaigns.map((c) => {
-          let isPaused = c.campaignStatus === "PAUSED_AUTONOMOUSLY";
-          let isScaled = c.campaignStatus === "SCALED_AUTONOMOUSLY";
+      {campaigns.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", background: "var(--bg-surface)", borderRadius: "12px", border: "1px dashed var(--border-light)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
+          <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--text-main)", marginBottom: "6px" }}>No Ad Campaigns Available</div>
+          <div style={{ fontSize: "13px" }}>Connect your ad accounts or synchronize store marketing metrics to start true Net ROAS attribution and bleeding campaign prevention.</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {campaigns.map((c) => {
+            let isPaused = c.campaignStatus === "PAUSED_AUTONOMOUSLY";
+            let isScaled = c.campaignStatus === "SCALED_AUTONOMOUSLY";
 
-          return (
-            <div key={c.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-                <div>
-                  <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>📊 {c.campaignName}</span>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Platform: {c.platform}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span className="saas-badge badge-brand">
-                    Reported ROAS: {c.platformRoas}x
-                  </span>
-                  <span className={`saas-badge ${c.trueNetRoas >= 1.2 ? "badge-success" : "badge-danger"}`}>
-                    True Net ROAS: {c.trueNetRoas}x
-                  </span>
-                  <span className={`saas-badge ${isPaused ? "badge-danger" : isScaled ? "badge-success" : "badge-info"}`}>
-                    {c.campaignStatus}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CAMPAIGN METRICS & SPEND</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.6" }}>
-                    • Daily Budget: <strong>${c.dailyBudgetUsd}/day</strong><br />
-                    • Platform ROAS: {c.platformRoas}x | True Net ROAS: <strong style={{ color: c.trueNetRoas >= 1.2 ? "var(--success-main)" : "var(--danger-main)" }}>{c.trueNetRoas}x</strong><br />
-                    • Daily Profit Contribution: <strong style={{ color: c.netProfitContributionUsd >= 0 ? "var(--success-main)" : "var(--danger-main)" }}>${c.netProfitContributionUsd}/day</strong>
+            return (
+              <div key={c.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--border-light)", paddingBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                  <div>
+                    <span style={{ fontSize: "16px", fontWeight: "800", color: "var(--text-main)" }}>📊 {c.campaignName}</span>
+                    <span style={{ marginLeft: "12px", fontSize: "12px", color: "var(--text-subtle)" }}>Platform: {c.platform}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className="saas-badge badge-brand">
+                      Reported ROAS: {c.platformRoas}x
+                    </span>
+                    <span className={`saas-badge ${c.trueNetRoas >= 1.2 ? "badge-success" : "badge-danger"}`}>
+                      True Net ROAS: {c.trueNetRoas}x
+                    </span>
+                    <span className={`saas-badge ${isPaused ? "badge-danger" : isScaled ? "badge-success" : "badge-info"}`}>
+                      {c.campaignStatus}
+                    </span>
                   </div>
                 </div>
 
-                <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
-                  <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AI GUARDIAN RECOMMENDATION</div>
-                  <div style={{ fontSize: "13px", fontWeight: "800", color: "var(--text-main)", marginBottom: "4px" }}>
-                    {c.aiRecommendation?.replace(/_/g, " ")}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-subtle)", marginBottom: "4px" }}>CAMPAIGN METRICS & SPEND</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.6" }}>
+                      • Daily Budget: <strong>${c.dailyBudgetUsd}/day</strong><br />
+                      • Platform ROAS: {c.platformRoas}x | True Net ROAS: <strong style={{ color: c.trueNetRoas >= 1.2 ? "var(--success-main)" : "var(--danger-main)" }}>{c.trueNetRoas}x</strong><br />
+                      • Daily Profit Contribution: <strong style={{ color: c.netProfitContributionUsd >= 0 ? "var(--success-main)" : "var(--danger-main)" }}>${c.netProfitContributionUsd}/day</strong>
+                    </div>
                   </div>
-                  <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
-                    Target Product: {c.mappedProductTitle}
+
+                  <div style={{ background: "var(--bg-subtle)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border-light)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: "700", color: "var(--brand-primary)", marginBottom: "4px" }}>AI GUARDIAN RECOMMENDATION</div>
+                    <div style={{ fontSize: "13px", fontWeight: "800", color: "var(--text-main)", marginBottom: "4px" }}>
+                      {c.aiRecommendation?.replace(/_/g, " ")}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                      Target Product: {c.mappedProductTitle}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                <button
-                  onClick={() => handleResolve(c.id, "PAUSE")}
-                  disabled={fetcher.state !== "idle" || isPaused}
-                  className="saas-btn btn-danger"
-                >
-                  🛑 Pause Bleeding Ad
-                </button>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    onClick={() => handleResolve(c.id, "PAUSE")}
+                    disabled={fetcher.state !== "idle" || isPaused}
+                    className="saas-btn btn-danger"
+                  >
+                    🛑 Pause Bleeding Ad
+                  </button>
 
-                <button
-                  onClick={() => handleResolve(c.id, "SCALE")}
-                  disabled={fetcher.state !== "idle" || isScaled}
-                  className="saas-btn btn-primary"
-                >
-                  🚀 Scale Budget (+20%)
-                </button>
+                  <button
+                    onClick={() => handleResolve(c.id, "SCALE")}
+                    disabled={fetcher.state !== "idle" || isScaled}
+                    className="saas-btn btn-primary"
+                  >
+                    🚀 Scale Budget (+20%)
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

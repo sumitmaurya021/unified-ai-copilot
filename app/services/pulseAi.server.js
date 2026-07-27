@@ -45,45 +45,6 @@ export async function seedInitialTrendOpportunities(prisma, shop, admin = null) 
     }
   }
 
-  // Fallback if no real products exist in store
-  if (itemsToSeed.length === 0) {
-    itemsToSeed = [
-      {
-        shop,
-        trendId: "TRND-901",
-        trendName: "#CozyCore Streetwear",
-        platform: "TIKTOK",
-        viralVelocityScore: 96,
-        growthRatePercent: 420,
-        mappedProductId: "gid://shopify/Product/2005",
-        mappedProductTitle: "Heavyweight Organic Cotton Fleece Hoodie",
-        statusOverride: "DISCOVERED",
-      },
-      {
-        shop,
-        trendId: "TRND-902",
-        trendName: "#MarathonTraining Prep",
-        platform: "INSTAGRAM",
-        viralVelocityScore: 94,
-        growthRatePercent: 280,
-        mappedProductId: "gid://shopify/Product/2001",
-        mappedProductTitle: "AeroMesh Lightweight Performance Running Sneaker",
-        statusOverride: "SCRIPT_APPROVED",
-      },
-      {
-        shop,
-        trendId: "TRND-903",
-        trendName: "#OldMoneyAesthetic",
-        platform: "PINTEREST",
-        viralVelocityScore: 91,
-        growthRatePercent: 195,
-        mappedProductId: "gid://shopify/Product/2002",
-        mappedProductTitle: "Silk Velvet Evening Gown — Midnight Edition",
-        statusOverride: "CAMPAIGN_LAUNCHED",
-      }
-    ];
-  }
-
   for (const opp of itemsToSeed) {
     let aiHook = await generateSocialHookWithGroq({
       productTitle: opp.mappedProductTitle,

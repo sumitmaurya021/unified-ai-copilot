@@ -38,36 +38,6 @@ export async function seedInitialInventoryForecasts(prisma, shop, admin = null) 
     }
   }
 
-  // Fallback if no real products exist in store
-  if (itemsToSeed.length === 0) {
-    itemsToSeed = [
-      {
-        shop,
-        productId: "gid://shopify/Product/2005",
-        productTitle: "Heavyweight Organic Cotton Fleece Hoodie",
-        currentStock: 12,
-        dailySalesVelocity: 4.5,
-        supplierLeadTimeDays: 14,
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/2001",
-        productTitle: "AeroMesh Lightweight Performance Running Sneaker",
-        currentStock: 320,
-        dailySalesVelocity: 0.4,
-        supplierLeadTimeDays: 21,
-      },
-      {
-        shop,
-        productId: "gid://shopify/Product/2004",
-        productTitle: "HydraGlow Advanced Vitamin C Radiance Serum",
-        currentStock: 180,
-        dailySalesVelocity: 8.2,
-        supplierLeadTimeDays: 14,
-      }
-    ];
-  }
-
   for (const item of itemsToSeed) {
     let aiPred = await predictInventoryActionWithGroq({
       productTitle: item.productTitle,
