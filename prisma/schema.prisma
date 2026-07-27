@@ -154,6 +154,35 @@ model SupportPolicyConfig {
   updatedAt                          DateTime @updatedAt
 }
 
+model TrendOpportunityProfile {
+  id                  String   @id @default(uuid())
+  shop                String
+  trendId             String
+  trendName           String   // e.g. #CozyCore Streetwear
+  platform            String   // TIKTOK, INSTAGRAM, PINTEREST, YOUTUBE_SHORTS
+  viralVelocityScore  Int      // 0-100
+  growthRatePercent   Int      // e.g. +420% 7-day growth
+  mappedProductId     String
+  mappedProductTitle  String
+  viralFitScore       Int      // 0-100
+  generatedHookScript String   // AI video hook script
+  generatedAdCaption  String   // AI caption with hashtags
+  campaignStatus      String   @default("DISCOVERED") // DISCOVERED, SCRIPT_APPROVED, CAMPAIGN_LAUNCHED, ARCHIVED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model TrendPolicyConfig {
+  id                   String   @id @default(uuid())
+  shop                 String   @unique
+  minViralFitScore     Int      @default(75)
+  autoGenerateScripts  Boolean  @default(true)
+  targetAudienceTone   String   @default("Gen-Z High Energy & Authentic")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+
 
 
 
