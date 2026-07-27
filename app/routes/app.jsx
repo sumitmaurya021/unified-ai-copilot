@@ -22,6 +22,7 @@ export default function App() {
         <s-link href="/app/catalog-alchemy">CatalogAlchemy AI</s-link>
         <s-link href="/app/support-shield">SupportShield AI</s-link>
         <s-link href="/app/pulse-ai">PulseAI Trends</s-link>
+        <s-link href="/app/global-reach">GlobalReach AI</s-link>
         <s-link href="/app/additional">Additional page</s-link>
       </s-app-nav>
       <Outlet />

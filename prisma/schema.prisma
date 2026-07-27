@@ -182,6 +182,35 @@ model TrendPolicyConfig {
   updatedAt            DateTime @updatedAt
 }
 
+model LocalizationProfile {
+  id                    String   @id @default(uuid())
+  shop                  String
+  productId             String
+  originalTitle         String
+  originalPrice         Float
+  targetMarket          String   // GERMANY_EU, JAPAN_APAC, FRANCE_EU, MEXICO_LATAM, UK_EMEA
+  targetLanguage        String   // German (DE), Japanese (JA), French (FR), Spanish (ES), British English (UK)
+  localizedTitle        String
+  localizedDescription  String
+  localizedPriceDisplay String   // e.g. €89,90 EUR or ¥12,800 JPY
+  unitConversionNote    String   // e.g. Converted US Size M to EU Size 48 | cm measurements applied
+  culturalNuanceScore   Int      // 0-100
+  publishingStatus      String   @default("DRAFT_AI") // DRAFT_AI, REVIEWED_APPROVED, PUBLISHED_STOREFRONT, ARCHIVED
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model LocalizationPolicyConfig {
+  id                         String   @id @default(uuid())
+  shop                       String   @unique
+  autoConvertUnits           Boolean  @default(true)
+  applyPsychologicalRounding Boolean  @default(true)
+  enableCulturalHolidayHooks Boolean  @default(true)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}
+
+
 
 
 
