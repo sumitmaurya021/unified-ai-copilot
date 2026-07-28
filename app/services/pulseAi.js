@@ -31,8 +31,10 @@ export function calculateViralFitScore({
     return 98;
   }
 
+  const c = productCategory.toLowerCase();
+
   // General heuristic calculation
-  return Math.min(90, Math.max(75, 78 + (p.length % 12)));
+  return Math.min(90, Math.max(75, 78 + (p.length % 12) + (c.length % 5)));
 }
 
 /**

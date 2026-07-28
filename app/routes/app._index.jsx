@@ -22,9 +22,9 @@ export const loader = async ({ request }) => {
     prisma.returnRequest.findMany({ where: { shop } }).catch(() => []),
     prisma.inventoryForecastProfile.findMany({ where: { shop } }).catch(() => []),
     prisma.supportTicketProfile.findMany({ where: { shop } }).catch(() => []),
-    prisma.socialTrendOpportunity.findMany({ where: { shop } }).catch(() => []),
-    prisma.productLocalizationProfile.findMany({ where: { shop } }).catch(() => []),
-    prisma.adCampaignAudit.findMany({ where: { shop } }).catch(() => [])
+    prisma.trendOpportunityProfile.findMany({ where: { shop } }).catch(() => []),
+    prisma.localizationProfile.findMany({ where: { shop } }).catch(() => []),
+    prisma.adCampaignProfile.findMany({ where: { shop } }).catch(() => [])
   ]);
 
   const totalSkus = catalogItems.length + marginProfiles.length + oracleForecasts.length;

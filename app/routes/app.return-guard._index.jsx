@@ -23,22 +23,42 @@ export const loader = async ({ request }) => {
     orderBy: { createdAt: "desc" },
   });
 
+  const processedRequests = returnRequests.map((r) => {
+    const econ = evaluateReturnUnitEconomics({
+      itemPriceUsd: r.itemPrice,
+      cogsUsd: r.cogs,
+      returnShippingFeeUsd: r.returnShippingFee
+    });
+    return {
+      ...r,
+      customerReturnReason: r.returnReason,
+      itemPriceUsd: r.itemPrice,
+      cogsUsd: r.cogs,
+      profitSavedUsd: econ.profitSavedByDeflection,
+      recommendedOffer: r.deflectionOffer || "KEEP_IT_DISCOUNT" // Defaulting if not set
+    };
+  });
+
   let totalDeflected = 0;
   let totalProfitSaved = 0;
   let fraudCaught = 0;
 
-  for (const r of returnRequests) {
+  for (const r of processedRequests) {
     if (r.resolutionStatus === "DEFLECTED") {
       totalDeflected++;
       totalProfitSaved += r.profitSavedUsd;
     }
-    if (r.fraudRiskScore >= 60 || r.resolutionStatus === "REJECTED_FRAUD") {
+    const riskInfo = evaluateReturnRiskWithVision({
+      customerReturnReason: r.returnReason,
+      hasPhotos: !!r.photoUrl
+    });
+    if (riskInfo.fraudRiskScore >= 60 || r.resolutionStatus === "REJECTED_FRAUD") {
       fraudCaught++;
     }
   }
 
   return {
-    returnRequests,
+    returnRequests: processedRequests,
     stats: {
       totalDeflected,
       totalProfitSaved: Math.round(totalProfitSaved),
@@ -205,7 +225,11 @@ export default function ReturnGuardRoute() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {returnRequests.map((req) => {
-            let isHighRisk = req.fraudRiskScore >= 60;
+            const riskInfo = evaluateReturnRiskWithVision({
+              customerReturnReason: req.returnReason,
+              hasPhotos: !!req.photoUrl
+            });
+            let isHighRisk = riskInfo.fraudRiskScore >= 60;
 
             return (
               <div key={req.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: "12px", padding: "20px", boxShadow: "var(--shadow-md)" }}>
@@ -216,7 +240,7 @@ export default function ReturnGuardRoute() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span className={`saas-badge ${isHighRisk ? "badge-danger" : "badge-success"}`}>
-                      Fraud Risk: {req.fraudRiskScore}%
+                      Fraud Risk: {riskInfo.fraudRiskScore}%
                     </span>
                     <span className="saas-badge badge-brand">
                       Status: {req.resolutionStatus}

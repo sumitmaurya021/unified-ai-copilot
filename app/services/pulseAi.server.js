@@ -95,7 +95,7 @@ export async function seedInitialTrendOpportunities(prisma, shop, admin = null) 
 /**
  * Autonomously launches or archives a viral trend campaign.
  */
-export async function executeTrendAction(prisma, oppId, actionType = "LAUNCH", admin = null) {
+export async function executeTrendAction(prisma, oppId, actionType = "LAUNCH") {
   let newStatus = "CAMPAIGN_LAUNCHED";
   if (actionType === "APPROVE") newStatus = "SCRIPT_APPROVED";
   if (actionType === "ARCHIVE") newStatus = "ARCHIVED";

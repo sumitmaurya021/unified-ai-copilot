@@ -9,7 +9,6 @@ import {
 } from "../services/adSpendGuardian.server";
 import {
   calculateTrueAdEconomics,
-  evaluateAdCampaign,
 } from "../services/adSpendGuardian";
 
 export const loader = async ({ request }) => {

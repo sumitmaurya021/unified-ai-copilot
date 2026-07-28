@@ -25,7 +25,7 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
   const shop = session.shop;
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -42,6 +42,35 @@ export const action = async ({ request }) => {
     await prisma.adCampaignProfile.deleteMany({ where: { shop } }).catch(() => {});
 
     return { success: true, message: "Database reset! Re-syncing live Shopify store data..." };
+  }
+
+  if (actionType === "SAVE_SETTINGS") {
+    const autoRepriceMargin = formData.get("autoRepriceMargin") === "on";
+    const autoResolveSupport = formData.get("autoResolveSupport") === "on";
+    const autoPauseBleedingAds = formData.get("autoPauseBleedingAds") === "on";
+    const minNetRoasThreshold = parseFloat(formData.get("minNetRoasThreshold"));
+    const themeMode = formData.get("themeMode") || "system";
+
+    await prisma.copilotGlobalSettings.upsert({
+      where: { shop },
+      update: {
+        autoRepriceMargin,
+        autoResolveSupport,
+        autoPauseBleedingAds,
+        minNetRoasThreshold,
+        themeMode
+      },
+      create: {
+        shop,
+        autoRepriceMargin,
+        autoResolveSupport,
+        autoPauseBleedingAds,
+        minNetRoasThreshold,
+        themeMode
+      }
+    });
+
+    return { success: true, message: "Settings saved successfully!" };
   }
 
   return { success: true };
@@ -87,6 +116,15 @@ export default function SettingsAndThemesRoute() {
 
   const handleSaveSettings = (e) => {
     e.preventDefault();
+    fetcher.submit({
+      actionType: "SAVE_SETTINGS",
+      autoRepriceMargin: autoReprice ? "on" : "off",
+      autoResolveSupport: autoSupport ? "on" : "off",
+      autoPauseBleedingAds: autoPauseAds ? "on" : "off",
+      minNetRoasThreshold: roasThreshold,
+      themeMode: currentTheme,
+    }, { method: "POST" });
+    
     setToastMessage("Settings & Preferences saved successfully!");
     setTimeout(() => setToastMessage(null), 3500);
   };

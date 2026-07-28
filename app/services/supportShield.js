@@ -76,20 +76,22 @@ export function generateSupportResponse({
   let aiResponse = "";
   let aiActionTaken = "";
 
+  const name = customerEmail.split('@')[0] || "there";
+
   if (analysis.recommendedAction === "ESCALATED_TO_HUMAN") {
-    aiResponse = `Hi there,\n\nI am so sorry to hear about this experience! This is absolutely not the standard we strive for. I have flagged your order (${orderId}) as Priority VIP and directly alerted our Senior Support Manager, who is reviewing your case right now.\n\nThey have been granted full authorization to issue a replacement or refund and will reach out to you via email/phone within 15 minutes to make this 100% right for you!`;
+    aiResponse = `Hi ${name},\n\nI am so sorry to hear about this experience! This is absolutely not the standard we strive for. I have flagged your order (${orderId}) as Priority VIP and directly alerted our Senior Support Manager, who is reviewing your case right now.\n\nThey have been granted full authorization to issue a replacement or refund and will reach out to you via email/phone within 15 minutes to make this 100% right for you!`;
     aiActionTaken = "Assigned Priority Ticket #VIP-992. Escalated directly to human manager with full context.";
   } else if (analysis.category === "WISMO") {
-    aiResponse = `Hi there!\n\nGreat news — your order ${orderId} is currently **${orderStatus}**! Your package was scanned by the carrier at the regional sort facility this morning and is on track for delivery by this afternoon.\n\nYou can check real-time GPS carrier tracking anytime here: [Track My Order ${orderId}](#).\n\nPlease let me know if you need anything else!`;
+    aiResponse = `Hi ${name}!\n\nGreat news — your order ${orderId} is currently **${orderStatus}**! Your package was scanned by the carrier at the regional sort facility this morning and is on track for delivery by this afternoon.\n\nYou can check real-time GPS carrier tracking anytime here: [Track My Order ${orderId}](#).\n\nPlease let me know if you need anything else!`;
     aiActionTaken = `Pulled live carrier GPS telemetry (${orderStatus}). Sent self-service tracking portal link.`;
   } else if (analysis.category === "RETURN_INQUIRY") {
-    aiResponse = `Hi there!\n\nWe make returns and exchanges super easy and hassle-free! You can initiate an instant size exchange or request a return for order ${orderId} in just 2 clicks through our automated portal: [Open ReturnGuard Portal (${orderId})](#).\n\n💡 **Bonus Tip:** If you decide to keep your item without shipping it back, our system might even unlock an exclusive 40% instant refund discount for you inside the portal!\n\nLet me know if you have any questions!`;
+    aiResponse = `Hi ${name}!\n\nWe make returns and exchanges super easy and hassle-free! You can initiate an instant size exchange or request a return for order ${orderId} in just 2 clicks through our automated portal: [Open ReturnGuard Portal (${orderId})](#).\n\n💡 **Bonus Tip:** If you decide to keep your item without shipping it back, our system might even unlock an exclusive 40% instant refund discount for you inside the portal!\n\nLet me know if you have any questions!`;
     aiActionTaken = "Cross-referenced ReturnGuard AI module. Dispatched 1-click automated deflection portal link.";
   } else if (analysis.category === "ADDRESS_CHANGE") {
-    aiResponse = `Hi there!\n\nThank you for reaching out! I checked our warehouse queue for order ${orderId}, and good news — your order has not been dispatched to the courier yet! I have automatically updated your shipping destination in our fulfillment system.\n\nYou will receive a new tracking confirmation email as soon as your package leaves our warehouse today!`;
+    aiResponse = `Hi ${name}!\n\nThank you for reaching out! I checked our warehouse queue for order ${orderId}, and good news — your order has not been dispatched to the courier yet! I have automatically updated your shipping destination in our fulfillment system.\n\nYou will receive a new tracking confirmation email as soon as your package leaves our warehouse today!`;
     aiActionTaken = "Verified warehouse fulfillment hold. Autonomously updated shipping address in Shopify Orders API.";
   } else {
-    aiResponse = `Hi there!\n\nThank you for reaching out! Yes, order ${orderId} is confirmed and in good standing. Our standard fulfillment timeframe is 24-48 hours, and all packages are shipped with fully insured express shipping.\n\nPlease let us know if you'd like us to customize your delivery preferences or assist with anything else!`;
+    aiResponse = `Hi ${name}!\n\nThank you for reaching out! Yes, order ${orderId} is confirmed and in good standing. Our standard fulfillment timeframe is 24-48 hours, and all packages are shipped with fully insured express shipping.\n\nPlease let us know if you'd like us to customize your delivery preferences or assist with anything else!`;
     aiActionTaken = "Retrieved store policy & order status. Dispatched verified catalog specification confirmation.";
   }
 

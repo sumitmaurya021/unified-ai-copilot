@@ -268,10 +268,17 @@ model InventoryPolicyConfig {
   updatedAt                     DateTime @updatedAt
 }
 
-
-
-
-
-
-
-
+model CopilotGlobalSettings {
+  id                    String   @id @default(uuid())
+  shop                  String   @unique
+  themeMode             String   @default("system")
+  autoPublishCatalog    Boolean  @default(false)
+  autoRepriceMargin     Boolean  @default(true)
+  autoResolveSupport    Boolean  @default(true)
+  autoPauseBleedingAds  Boolean  @default(true)
+  minNetRoasThreshold   Float    @default(1.20)
+  groqModel             String   @default("llama-3.3-70b-versatile")
+  groqApiKeyConfigured  Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

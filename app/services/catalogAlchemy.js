@@ -43,6 +43,12 @@ export function calculateCatalogQualityScore({
     penalties.push("Wall of text: lacks bullet points or scannable formatting (-20 pts)");
   }
 
+  // Vendor check
+  if (vendor && /Wholesale|Import|AliExpress/i.test(vendor)) {
+    score -= 10;
+    penalties.push("Generic supplier vendor name detected (-10 pts)");
+  }
+
   // Metafields check
   if (metafieldsCount === 0) {
     score -= 20;
@@ -94,7 +100,7 @@ export function healCatalogItem({
 
   // Healed Markdown Description
   const healedDescription = `### ✨ Why You'll Love It
-Crafted for modern performance and effortless style, the **${healedTitle}** combines state-of-the-art materials with exceptional ergonomics. Whether you're on the move or elevating your daily routine, this piece delivers unrivaled comfort and durability.
+Crafted for modern performance and effortless style, the **${healedTitle}** combines state-of-the-art materials with exceptional ergonomics. Designed with a ${targetTone} aesthetic, whether you're on the move or elevating your daily routine, this piece delivers unrivaled comfort and durability.
 
 ### 💎 Key Highlights & Benefits
 - **Engineered Precision:** Built from premium, sustainably sourced materials designed to withstand daily wear.

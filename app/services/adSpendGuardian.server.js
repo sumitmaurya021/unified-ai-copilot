@@ -27,7 +27,6 @@ export async function seedInitialAdCampaigns(prisma, shop, admin = null) {
       for (let i = 0; i < realProducts.length; i++) {
         const p = realProducts[i];
         const plat = platforms[i % platforms.length];
-        const priceVal = parseFloat(p.variants?.nodes?.[0]?.price) || 99.99;
         const roasVal = Math.round((Math.random() * 2.5 + 1.2) * 100) / 100;
 
         itemsToSeed.push({
@@ -104,7 +103,7 @@ export async function seedInitialAdCampaigns(prisma, shop, admin = null) {
 /**
  * Autonomously executes ad spend pauses, scales, or maintenance actions.
  */
-export async function executeAdAction(prisma, campaignId, actionType = "PAUSE", admin = null) {
+export async function executeAdAction(prisma, campaignId, actionType = "PAUSE") {
   const campaign = await prisma.adCampaignProfile.findUnique({ where: { id: campaignId } });
   if (!campaign) return null;
 

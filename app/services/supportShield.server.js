@@ -91,7 +91,7 @@ export async function seedInitialSupportTickets(prisma, shop, admin = null) {
 /**
  * Autonomously resolves or escalates a support ticket.
  */
-export async function executeSupportAction(prisma, ticketId, actionType = "APPROVE_SEND", admin = null) {
+export async function executeSupportAction(prisma, ticketId, actionType = "APPROVE_SEND") {
   let newStatus = "RESOLVED_AUTONOMOUSLY";
   if (actionType === "ESCALATE") newStatus = "ESCALATED_TO_HUMAN";
   if (actionType === "CLOSE") newStatus = "CLOSED";

@@ -44,23 +44,26 @@ export function evaluateInventoryHealth({
   let stockStatus = "HEALTHY_BUFFER";
   let aiActionRecommendation = "MAINTAIN_CURRENT_STOCK";
   let poStatus = "NONE";
-  let rationale = `✅ HEALTHY BUFFER: Current stock (${currentStock} units) covers ${forecast.predictedStockoutDays} days of sales. Reorder threshold is set at ${forecast.reorderPointUnits} units.`;
+  const productPrefix = productTitle ? `[${productTitle}] ` : "";
+  let rationale = `✅ HEALTHY BUFFER: ${productPrefix}Current stock (${currentStock} units) covers ${forecast.predictedStockoutDays} days of sales. Reorder threshold is set at ${forecast.reorderPointUnits} units.`;
 
   if (forecast.predictedStockoutDays <= supplierLeadTimeDays) {
     stockStatus = "CRITICAL_STOCKOUT_IMMINENT";
     aiActionRecommendation = "EMERGENCY_PO_DISPATCH";
     poStatus = "DRAFT_AI";
-    rationale = `🚨 STOCKOUT ALERT: At current velocity (${dailySalesVelocity} units/day), stockout will occur in ${forecast.predictedStockoutDays} days—before the ${supplierLeadTimeDays}-day supplier lead time! Emergency PO of ${forecast.recommendedPoUnits} units ($${forecast.recommendedPoUnits * 35}) generated to prevent ad spend bleed and SEO ranking collapse.`;
+    rationale = `🚨 STOCKOUT ALERT: ${productPrefix}At current velocity (${dailySalesVelocity} units/day), stockout will occur in ${forecast.predictedStockoutDays} days—before the ${supplierLeadTimeDays}-day supplier lead time! Emergency PO of ${forecast.recommendedPoUnits} units ($${forecast.recommendedPoUnits * 35}) generated to prevent ad spend bleed and SEO ranking collapse.`;
   } else if (currentStock >= forecast.reorderPointUnits * 3 || (forecast.predictedStockoutDays > 90 && dailySalesVelocity < 0.5)) {
     stockStatus = "OVERSTOCKED_DEAD_CAPITAL";
     aiActionRecommendation = "INITIATE_CLEARANCE_BUNDLE";
     poStatus = "NONE";
-    rationale = `📦 DEAD STOCK DETECTED: Over ${forecast.predictedStockoutDays} days of inventory (${currentStock} units tying up $${forecast.workingCapitalUsd} capital). Recommending an immediate 20% bundle discount via PulseAI & MarginGuard to free up warehouse shelves.`;
+    rationale = `📦 DEAD STOCK DETECTED: ${productPrefix}Over ${forecast.predictedStockoutDays} days of inventory (${currentStock} units tying up $${forecast.workingCapitalUsd} capital). Recommending an immediate 20% bundle discount via PulseAI & MarginGuard to free up warehouse shelves.`;
   }
 
   return {
-    ...forecast,
     stockStatus,
+    predictedStockoutDays: forecast.predictedStockoutDays,
+    recommendedPoUnits: forecast.recommendedPoUnits,
+    workingCapitalUsd: parseFloat(forecast.workingCapitalUsd),
     aiActionRecommendation,
     poStatus,
     rationale,

@@ -93,7 +93,7 @@ export async function seedInitialInventoryForecasts(prisma, shop, admin = null) 
 /**
  * Autonomously executes PO dispatch, delivery restock, or dead stock clearance actions.
  */
-export async function executeInventoryAction(prisma, forecastId, actionType = "DISPATCH_PO", admin = null) {
+export async function executeInventoryAction(prisma, forecastId, actionType = "APPROVE_PO") {
   const item = await prisma.inventoryForecastProfile.findUnique({ where: { id: forecastId } });
   if (!item) return null;
 

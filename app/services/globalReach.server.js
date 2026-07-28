@@ -96,7 +96,7 @@ export async function seedInitialLocalizationProfiles(prisma, shop, admin = null
 /**
  * Autonomously publishes or approves a cross-border market listing.
  */
-export async function executeLocalizationAction(prisma, locId, actionType = "PUBLISH", admin = null) {
+export async function executeLocalizationAction(prisma, locId, actionType = "PUBLISH") {
   let newStatus = "PUBLISHED_STOREFRONT";
   if (actionType === "APPROVE") newStatus = "REVIEWED_APPROVED";
   if (actionType === "ARCHIVE") newStatus = "ARCHIVED";

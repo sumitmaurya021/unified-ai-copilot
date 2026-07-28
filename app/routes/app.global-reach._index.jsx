@@ -7,7 +7,6 @@ import {
   executeLocalizationAction,
 } from "../services/globalReach.server";
 import {
-  calculateCulturalNuanceScore,
   localizeProductContent,
 } from "../services/globalReach";
 

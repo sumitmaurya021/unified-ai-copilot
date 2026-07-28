@@ -54,16 +54,17 @@ export function evaluateAdCampaign({
 
   let aiRecommendation = "MAINTAIN_MONITOR";
   let statusOverride = "ACTIVE_RUNNING";
-  let rationale = `✅ STABLE PERFORMER: True Net ROAS is ${econ.trueNetRoas}x (+$$${econ.netProfitContributionUsd} daily net contribution). Maintaining current daily budget.`;
+  const campaignPrefix = campaignName ? `[${campaignName}] ` : "";
+  let rationale = `✅ STABLE PERFORMER: ${campaignPrefix}True Net ROAS is ${econ.trueNetRoas}x (+$$${econ.netProfitContributionUsd} daily net contribution). Maintaining current daily budget.`;
 
   if (econ.trueNetRoas < 1.0 || econ.netProfitContributionUsd < 0) {
     aiRecommendation = "PAUSE_IMMEDIATELY";
     statusOverride = "PAUSED_AUTONOMOUSLY";
-    rationale = `🚨 BLEEDING ALERT: Platform reports ${platformRoas}x ROAS, but after ${cogsPercent}% COGS and ${returnRatePercent}% return rate (from ReturnGuard), this campaign loses -$${Math.abs(econ.netProfitContributionUsd)} every day! Autonomously paused to stop loss.`;
+    rationale = `🚨 BLEEDING ALERT: ${campaignPrefix}Platform reports ${platformRoas}x ROAS, but after ${cogsPercent}% COGS and ${returnRatePercent}% return rate (from ReturnGuard), this campaign loses -$${Math.abs(econ.netProfitContributionUsd)} every day! Autonomously paused to stop loss.`;
   } else if (econ.trueNetRoas >= 2.0 && econ.netProfitContributionUsd >= 100) {
     aiRecommendation = "SCALE_BUDGET_20X";
     statusOverride = "SCALED_AUTONOMOUSLY";
-    rationale = `🚀 SCALING WINNER: True Net ROAS is ${econ.trueNetRoas}x (+$$${econ.netProfitContributionUsd} daily net contribution) with low returns (${returnRatePercent}%). Autonomously boosting daily spend +20% to capture market share!`;
+    rationale = `🚀 SCALING WINNER: ${campaignPrefix}True Net ROAS is ${econ.trueNetRoas}x (+$$${econ.netProfitContributionUsd} daily net contribution) with low returns (${returnRatePercent}%). Autonomously boosting daily spend +20% to capture market share!`;
   }
 
   return {

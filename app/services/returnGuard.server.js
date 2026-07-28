@@ -92,7 +92,7 @@ export async function seedInitialReturnRequests(prisma, shop, admin = null) {
 /**
  * Autonomously resolves a return request (Deflect, Approve, Reject).
  */
-export async function processAIResolution(prisma, returnRequestId, actionType, notes = "", admin = null) {
+export async function processAIResolution(prisma, returnRequestId, actionType, notes = "") {
   let status = "PENDING";
   if (actionType === "DEFLECT") status = "DEFLECTED";
   if (actionType === "EXCHANGE") status = "EXCHANGED";
