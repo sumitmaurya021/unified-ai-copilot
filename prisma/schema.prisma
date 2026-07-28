@@ -32,3 +32,253 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model ReturnRequest {
+  id                 String   @id @default(uuid())
+  shop               String
+  orderId            String
+  orderName          String
+  customerEmail      String
+  itemTitle          String
+  itemPrice          Float
+  cogs               Float
+  returnShippingFee  Float
+  returnReason       String
+  photoUrl           String?
+  aiInspectionStatus String   @default("PENDING") // PENDING, VERIFIED_DEFECT, WARDROBING_SUSPECTED, NORMAL_WEAR
+  aiInspectionNotes  String?
+  deflectionOffer    String?
+  resolutionStatus   String   @default("PENDING") // PENDING, DEFLECTED, EXCHANGED, RETURN_APPROVED, REJECTED_FRAUD
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ReturnPolicyConfig {
+  id                           String   @id @default(uuid())
+  shop                         String   @unique
+  autoDeflectThresholdPercent  Float    @default(20.0)
+  defaultKeepItDiscountPercent Float    @default(40.0)
+  autoFlagWardrobing           Boolean  @default(true)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+}
+
+model ProductMarginProfile {
+  id                          String   @id @default(uuid())
+  shop                        String
+  productId                   String
+  productTitle                String
+  sku                         String
+  price                       Float
+  cogs                        Float
+  averageShippingCost         Float
+  paymentProcessingFeePercent Float    @default(2.9)
+  paymentProcessingFeeFixed   Float    @default(0.30)
+  currentCac                  Float
+  inventoryLevel              Int
+  restockLeadTimeDays         Int
+  netMarginDollar             Float
+  netMarginPercent            Float
+  aiRepricingStatus           String   @default("OPTIMAL") // OPTIMAL, LOW_MARGIN_ALERT, ELASTICITY_TEST_ACTIVE, INVENTORY_PROTECTION_ACTIVE
+  aiRecommendedPrice          Float
+  aiRepricingRationale        String
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
+
+model MarginPolicyConfig {
+  id                       String   @id @default(uuid())
+  shop                     String   @unique
+  minTargetMarginPercent   Float    @default(20.0)
+  autoNudgePriceOnLowStock Boolean  @default(true)
+  lowStockThreshold        Int      @default(15)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model CatalogItemProfile {
+  id                   String   @id @default(uuid())
+  shop                 String
+  productId            String
+  rawTitle             String
+  healedTitle          String
+  rawDescription       String
+  healedDescription    String
+  rawVendor            String
+  healedVendor         String
+  seoTitle             String
+  seoDescription       String
+  extractedMetafields  String   // JSON string representing extracted attributes
+  aiHealingStatus      String   @default("NEEDS_HEALING") // NEEDS_HEALING, HEALED_READY_FOR_REVIEW, AUTO_PUBLISHED, REJECTED
+  aiQualityScoreRaw    Int
+  aiQualityScoreHealed Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model CatalogPolicyConfig {
+  id                        String   @id @default(uuid())
+  shop                      String   @unique
+  autoPublishThresholdScore Int      @default(90)
+  targetTone                String   @default("Premium & Minimalist")
+  autoExtractMetafields     Boolean  @default(true)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model SupportTicketProfile {
+  id                String   @id @default(uuid())
+  shop              String
+  ticketId          String
+  customerEmail     String
+  orderId           String
+  queryCategory     String   // WISMO, RETURN_INQUIRY, ADDRESS_CHANGE, PRODUCT_QUESTION, COMPLAINT
+  customerQuery     String
+  aiResponse        String
+  aiSentimentScore  Float    // -1.0 to 1.0
+  resolutionStatus  String   @default("PENDING_REVIEW") // PENDING_REVIEW, RESOLVED_AUTONOMOUSLY, ESCALATED_TO_HUMAN, CLOSED
+  aiConfidenceScore Int      // 0-100
+  aiActionTaken     String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model SupportPolicyConfig {
+  id                                 String   @id @default(uuid())
+  shop                               String   @unique
+  autoResolveConfidenceThreshold     Int      @default(85)
+  escalateNegativeSentimentThreshold Float    @default(-0.5)
+  supportTone                        String   @default("Empathetic & Professional")
+  enableWismoAutomation              Boolean  @default(true)
+  createdAt                          DateTime @default(now())
+  updatedAt                          DateTime @updatedAt
+}
+
+model TrendOpportunityProfile {
+  id                  String   @id @default(uuid())
+  shop                String
+  trendId             String
+  trendName           String   // e.g. #CozyCore Streetwear
+  platform            String   // TIKTOK, INSTAGRAM, PINTEREST, YOUTUBE_SHORTS
+  viralVelocityScore  Int      // 0-100
+  growthRatePercent   Int      // e.g. +420% 7-day growth
+  mappedProductId     String
+  mappedProductTitle  String
+  viralFitScore       Int      // 0-100
+  generatedHookScript String   // AI video hook script
+  generatedAdCaption  String   // AI caption with hashtags
+  campaignStatus      String   @default("DISCOVERED") // DISCOVERED, SCRIPT_APPROVED, CAMPAIGN_LAUNCHED, ARCHIVED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model TrendPolicyConfig {
+  id                   String   @id @default(uuid())
+  shop                 String   @unique
+  minViralFitScore     Int      @default(75)
+  autoGenerateScripts  Boolean  @default(true)
+  targetAudienceTone   String   @default("Gen-Z High Energy & Authentic")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model LocalizationProfile {
+  id                    String   @id @default(uuid())
+  shop                  String
+  productId             String
+  originalTitle         String
+  originalPrice         Float
+  targetMarket          String   // GERMANY_EU, JAPAN_APAC, FRANCE_EU, MEXICO_LATAM, UK_EMEA
+  targetLanguage        String   // German (DE), Japanese (JA), French (FR), Spanish (ES), British English (UK)
+  localizedTitle        String
+  localizedDescription  String
+  localizedPriceDisplay String   // e.g. €89,90 EUR or ¥12,800 JPY
+  unitConversionNote    String   // e.g. Converted US Size M to EU Size 48 | cm measurements applied
+  culturalNuanceScore   Int      // 0-100
+  publishingStatus      String   @default("DRAFT_AI") // DRAFT_AI, REVIEWED_APPROVED, PUBLISHED_STOREFRONT, ARCHIVED
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model LocalizationPolicyConfig {
+  id                         String   @id @default(uuid())
+  shop                       String   @unique
+  autoConvertUnits           Boolean  @default(true)
+  applyPsychologicalRounding Boolean  @default(true)
+  enableCulturalHolidayHooks Boolean  @default(true)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}
+
+model AdCampaignProfile {
+  id                       String   @id @default(uuid())
+  shop                     String
+  campaignId               String
+  campaignName             String
+  platform                 String   // META_ADS, GOOGLE_PMAX, TIKTOK_ADS, PINTEREST_ADS
+  mappedProductId          String
+  mappedProductTitle       String
+  dailyBudgetUsd           Float
+  platformRoas             Float    // e.g. 1.80
+  trueNetRoas              Float    // e.g. 0.74
+  netProfitContributionUsd Float    // e.g. -42.50 or 380.00
+  aiRecommendation         String   // PAUSE_IMMEDIATELY, SCALE_BUDGET_20X, MAINTAIN_MONITOR
+  campaignStatus           String   @default("ACTIVE_RUNNING") // ACTIVE_RUNNING, PAUSED_AUTONOMOUSLY, SCALED_AUTONOMOUSLY, MANUAL_REVIEW
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model AdPolicyConfig {
+  id                   String   @id @default(uuid())
+  shop                 String   @unique
+  minTrueNetRoas       Float    @default(1.20)
+  autoPauseBleedingAds Boolean  @default(true)
+  autoScaleWinners     Boolean  @default(true)
+  maxDailyScalePercent Int      @default(20)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model InventoryForecastProfile {
+  id                     String   @id @default(uuid())
+  shop                   String
+  productId              String
+  productTitle           String
+  currentStock           Int      // e.g. 12 or 450
+  dailySalesVelocity     Float    // e.g. 4.5
+  supplierLeadTimeDays   Int      // e.g. 14
+  predictedStockoutDays  Int      // e.g. 3
+  reorderPointUnits      Int      // e.g. 65
+  recommendedPoUnits     Int      // e.g. 270
+  stockStatus            String   @default("HEALTHY_BUFFER") // CRITICAL_STOCKOUT_IMMINENT, HEALTHY_BUFFER, OVERSTOCKED_DEAD_CAPITAL, REORDER_PLACED
+  aiActionRecommendation String   // EMERGENCY_PO_DISPATCH, MAINTAIN_CURRENT_STOCK, INITIATE_CLEARANCE_BUNDLE, AWAITING_SUPPLIER
+  poStatus               String   @default("DRAFT_AI") // DRAFT_AI, APPROVED_DISPATCHED, DELIVERED, NONE
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model InventoryPolicyConfig {
+  id                            String   @id @default(uuid())
+  shop                          String   @unique
+  bufferStockDays               Int      @default(14)
+  autoDraftPurchaseOrders       Boolean  @default(true)
+  enableDeadStockBundling       Boolean  @default(true)
+  leadTimeSafetyMarginPercent   Int      @default(20)
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+}
+
+model CopilotGlobalSettings {
+  id                    String   @id @default(uuid())
+  shop                  String   @unique
+  themeMode             String   @default("system")
+  autoPublishCatalog    Boolean  @default(false)
+  autoRepriceMargin     Boolean  @default(true)
+  autoResolveSupport    Boolean  @default(true)
+  autoPauseBleedingAds  Boolean  @default(true)
+  minNetRoasThreshold   Float    @default(1.20)
+  groqModel             String   @default("llama-3.3-70b-versatile")
+  groqApiKeyConfigured  Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
